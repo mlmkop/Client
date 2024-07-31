@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.35027.167
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CSHService", "CSHService\CSHService.vcxproj", "{697873A8-4E5B-4E8D-9B55-20A55D78FBC0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CSHSensor", "CSHSensor\CSHSensor.vcxproj", "{47740C54-828D-4DCE-828E-6640F50302A7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CSHShield", "CSHShield\CSHShield.vcxproj", "{9FA2C686-4F8F-490B-B146-CE574A6A7B89}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{697873A8-4E5B-4E8D-9B55-20A55D78FBC0}.Debug|x64.ActiveCfg = Debug|x64
+		{697873A8-4E5B-4E8D-9B55-20A55D78FBC0}.Debug|x64.Build.0 = Debug|x64
+		{697873A8-4E5B-4E8D-9B55-20A55D78FBC0}.Release|x64.ActiveCfg = Release|x64
+		{697873A8-4E5B-4E8D-9B55-20A55D78FBC0}.Release|x64.Build.0 = Release|x64
+		{47740C54-828D-4DCE-828E-6640F50302A7}.Debug|x64.ActiveCfg = Debug|x64
+		{47740C54-828D-4DCE-828E-6640F50302A7}.Debug|x64.Build.0 = Debug|x64
+		{47740C54-828D-4DCE-828E-6640F50302A7}.Release|x64.ActiveCfg = Release|x64
+		{47740C54-828D-4DCE-828E-6640F50302A7}.Release|x64.Build.0 = Release|x64
+		{9FA2C686-4F8F-490B-B146-CE574A6A7B89}.Debug|x64.ActiveCfg = Debug|x64
+		{9FA2C686-4F8F-490B-B146-CE574A6A7B89}.Debug|x64.Build.0 = Debug|x64
+		{9FA2C686-4F8F-490B-B146-CE574A6A7B89}.Release|x64.ActiveCfg = Release|x64
+		{9FA2C686-4F8F-490B-B146-CE574A6A7B89}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F51A3764-C2FD-4A24-B1C3-94AEDB0FBA3C}
+	EndGlobalSection
+EndGlobal

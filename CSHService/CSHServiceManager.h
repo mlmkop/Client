@@ -30,11 +30,11 @@ class CCSHServiceManager
 
 
 	public:
-		static VOID WINAPI ServiceMain(DWORD dwNumServicesArgs, LPTSTR *lpServiceArgVectors);
+		static VOID ServiceMain(DWORD dwNumServicesArgs, LPTSTR *lpServiceArgVectors);
 
 
 	public:
-		static DWORD WINAPI ServiceCtrlHandler(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext);
+		static DWORD ServiceCtrlHandler(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext);
 
 		
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

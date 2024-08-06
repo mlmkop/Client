@@ -117,15 +117,19 @@ class CCSHSensorDlg : public CDialogEx
 
 
 	public:
-		CString shieldBackgroundImagePath;
+		CString sensorBackgroundImagePath;
 
 
 	public:
-		CString shieldConfigurationPath;
+		CString sensorConfigurationPath;
 
 
 	public:
 		CString shieldModulePath;
+
+
+	public:
+		CString currentActiveUserOracleTableName;
 
 
 	public:
@@ -146,10 +150,6 @@ class CCSHSensorDlg : public CDialogEx
 
 	public:
 		TCHAR currentActiveUserSessionToken[512];
-
-
-	public:
-		TCHAR currentActiveUserSessionTokenPlain[512];
 
 
 	public:

@@ -23,22 +23,16 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-using namespace std;
+#ifndef _UNICODE
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-#ifdef _UNICODE
-
-
-	typedef basic_fstream<wchar_t, char_traits<wchar_t>> wfstream, tfstream;
+	typedef std::basic_fstream<char, std::char_traits<char>> fstream, tfstream;
 
 
 #else
 
 
-	typedef basic_fstream<char, char_traits<char>> fstream, tfstream;
+	typedef std::basic_fstream<wchar_t, std::char_traits<wchar_t>> wfstream, tfstream;
 
 
 #endif
@@ -55,16 +49,15 @@ VOID ServiceLogger(LPCTSTR currentLogContents, ...)
 	#ifndef DISABLE_SERVICELOGGER
 	
 
-		TCHAR *pCurrentLogContents = (TCHAR *)calloc((size_t)1, (size_t)1024);
-
-
-		if (pCurrentLogContents == NULL)
+		if (_tcslen(currentLogContents) == NULL)
 		{
-			_tprintf(_T("calloc Failed, GetLastError Code = %ld\n\n"), GetLastError());
-
-
 			return;
 		}
+
+
+		TCHAR currentLogContentsBuffer[1024];
+
+		memset(currentLogContentsBuffer, NULL, sizeof(currentLogContentsBuffer));
 
 
 		time_t currentTime = time(NULL);
@@ -86,7 +79,7 @@ VOID ServiceLogger(LPCTSTR currentLogContents, ...)
 		_tcsftime(timeBuffer, (size_t)(128 - 1), _T("[ %Y-%m-%d %H:%M:%S ]"), &currentTimeSet);
 
 
-		_stprintf_s(pCurrentLogContents, (size_t)(128 - 1), _T("%s"), timeBuffer);
+		_stprintf_s(currentLogContentsBuffer, timeBuffer);
 
 
 		va_list vaList = NULL;
@@ -95,19 +88,7 @@ VOID ServiceLogger(LPCTSTR currentLogContents, ...)
 		va_start(vaList, currentLogContents);
 
 
-		#ifdef _UNICODE
-
-
-			vswprintf((pCurrentLogContents + _tcslen(timeBuffer)), ((size_t)(1024 - 1) - _tcslen(timeBuffer)), currentLogContents, vaList);
-
-
-		#else
-
-
-			vsnprintf((pCurrentLogContents + _tcslen(timeBuffer)), ((size_t)(1024 - 1) - _tcslen(timeBuffer)), currentLogContents, vaList);
-
-
-		#endif
+		_vstprintf_s((currentLogContentsBuffer + _tcslen(timeBuffer)), ((size_t)(1024 - 1) - _tcslen(timeBuffer)), currentLogContents, vaList);
 
 
 		va_end(vaList);
@@ -130,12 +111,6 @@ VOID ServiceLogger(LPCTSTR currentLogContents, ...)
 		if ((dwServiceModulePath == NULL) || (GetLastError() == ERROR_INSUFFICIENT_BUFFER))
 		{
 			_tprintf(_T("GetModuleFileName Failed, GetLastError Code = %ld\n\n"), GetLastError());
-
-
-			free(pCurrentLogContents);
-
-
-			pCurrentLogContents = NULL;
 
 
 			return;
@@ -169,25 +144,19 @@ VOID ServiceLogger(LPCTSTR currentLogContents, ...)
 		tfstream logFile;
 
 
-		logFile.open(logFilePath, (ios::out | ios::app));
+		logFile.open(logFilePath, (std::ios::out | std::ios::app));
 
 
 		if (logFile.is_open())
 		{
-			logFile.write(pCurrentLogContents, (streamsize)_tcslen(pCurrentLogContents));
+			logFile.write(currentLogContentsBuffer, (std::streamsize)_tcslen(currentLogContentsBuffer));
 
 
-			logFile << endl;
+			logFile << std::endl;
 
 
 			logFile.close();
 		}
-
-
-		free(pCurrentLogContents);
-
-
-		pCurrentLogContents = NULL;
 
 	
 	#endif

@@ -29,11 +29,11 @@ class CCSHSensorCryptography
 
 
 	public:
-		BYTE masterKey[(INT)(16 + 16)];
+		BYTE masterKey[16 + 16];
 
 
 	public:
-		BYTE roundKey[(INT)(16 * (16 + 1))];
+		BYTE roundKey[16 * (16 + 1)];
 
 
 	public:
@@ -106,14 +106,28 @@ class CCSHSensorCryptography
 
 
 	public:
-		VOID ConvertWideCharToMultyByteChar(CONST TCHAR *pWideCharString, CHAR *pMultyByteCharString);
+		VOID ConvertWideCharToMultyByteCharANSI(CONST TCHAR *pWideCharString, CHAR *pMultyByteCharString);
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 	public:
-		VOID ConvertMultyByteCharToWideChar(CONST CHAR *pMultyByteCharString, TCHAR *pWideCharString);
+		VOID ConvertMultyByteCharToWideCharANSI(CONST CHAR *pMultyByteCharString, TCHAR *pWideCharString);
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	public:
+		VOID ConvertWideCharToMultyByteCharUTF8(CONST TCHAR *pWideCharString, CHAR *pMultyByteCharString);
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	public:
+		VOID ConvertMultyByteCharToWideCharUTF8(CONST CHAR *pMultyByteCharString, TCHAR *pWideCharString);
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

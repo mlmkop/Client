@@ -20,12 +20,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-using namespace std;
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 #define CSHSENSOR_SESSIONTIMER 900
 
 
@@ -39,12 +33,6 @@ using namespace std;
 
 
 UINT WM_CSHSENSOR_TRAYNOTIFICATIONCALLBACK = RegisterWindowMessage(_T("TRAYNOTIFICATIONCALLBACK"));
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-extern CString oracleDataBaseUserTableName;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -100,10 +88,21 @@ UINT SpecificSignOutEventWatchThread(LPVOID lpVoid)
 	CCSHSensorDlg *pCCSHSensorDlg = (CCSHSensorDlg *)lpVoid;
 
 
+	TCHAR currentActiveUserSessionTokenPlain[512];
+
+	memset(currentActiveUserSessionTokenPlain, NULL, sizeof(currentActiveUserSessionTokenPlain));
+
+
+	_stprintf_s(currentActiveUserSessionTokenPlain, pCCSHSensorDlg->currentActiveUserSessionToken);
+
+
+	pCCSHSensorCryptography->ARIADecrypt(currentActiveUserSessionTokenPlain);
+
+
 	CString currentActiveUserProcessSessionEvent;
 
 
-	currentActiveUserProcessSessionEvent.Format(_T("Global\\CSHSensor|%s"), pCCSHSensorDlg->currentActiveUserSessionTokenPlain);
+	currentActiveUserProcessSessionEvent.Format(_T("Global\\CSHSensor|%s"), currentActiveUserSessionTokenPlain);
 
 
 	while (TRUE)
@@ -208,13 +207,16 @@ CCSHSensorDlg::CCSHSensorDlg(CWnd *pParent /*=nullptr*/) : CDialogEx(IDD_CSHSENS
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	shieldBackgroundImagePath.Empty();
+	sensorBackgroundImagePath.Empty();
 
 
-	shieldConfigurationPath.Empty();
+	sensorConfigurationPath.Empty();
 
 
 	shieldModulePath.Empty();
+
+
+	currentActiveUserOracleTableName.Empty();
 
 
 	currentActiveUserRegistryPath.Empty();
@@ -227,9 +229,6 @@ CCSHSensorDlg::CCSHSensorDlg(CWnd *pParent /*=nullptr*/) : CDialogEx(IDD_CSHSENS
 
 
 	memset(currentActiveUserSessionToken, NULL, sizeof(currentActiveUserSessionToken));
-
-
-	memset(currentActiveUserSessionTokenPlain, NULL, sizeof(currentActiveUserSessionTokenPlain));
 
 
 	memset(currentActiveUserID, NULL, sizeof(currentActiveUserID));
@@ -405,7 +404,7 @@ VOID CCSHSensorDlg::OnPaint()
 		CImage managerBackgroundImage;
 
 
-		if (managerBackgroundImage.Load(shieldBackgroundImagePath.GetBuffer()) != E_FAIL)
+		if (managerBackgroundImage.Load(sensorBackgroundImagePath.GetBuffer()) != E_FAIL)
 		{
 			dc.SetStretchBltMode(STRETCH_HALFTONE);
 
@@ -414,7 +413,7 @@ VOID CCSHSensorDlg::OnPaint()
 		}
 
 
-		shieldBackgroundImagePath.ReleaseBuffer();
+		sensorBackgroundImagePath.ReleaseBuffer();
 
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -620,10 +619,10 @@ VOID CCSHSensorDlg::CreateTrayNotification()
 	currentActiveUserNotifyIconData.hWnd = theApp.m_pMainWnd->GetSafeHwnd();
 
 
-	currentActiveUserNotifyIconData.uID = (UINT)CSHSENSOR_TRAYNOTIFICATION;
+	currentActiveUserNotifyIconData.uID = CSHSENSOR_TRAYNOTIFICATION;
 
 
-	currentActiveUserNotifyIconData.uFlags = (UINT)(NIF_MESSAGE | NIF_ICON | NIF_TIP | NIF_INFO);
+	currentActiveUserNotifyIconData.uFlags = (NIF_MESSAGE | NIF_ICON | NIF_TIP | NIF_INFO);
 
 
 	currentActiveUserNotifyIconData.uCallbackMessage = WM_CSHSENSOR_TRAYNOTIFICATIONCALLBACK;
@@ -635,7 +634,7 @@ VOID CCSHSensorDlg::CreateTrayNotification()
 	currentActiveUserNotifyIconData.uTimeout = (UINT)3000;
 
 
-	currentActiveUserNotifyIconData.dwInfoFlags = (DWORD)(NIIF_INFO | NIIF_NOSOUND);
+	currentActiveUserNotifyIconData.dwInfoFlags = (NIIF_INFO | NIIF_NOSOUND);
 
 
 	_stprintf_s(currentActiveUserNotifyIconData.szInfoTitle, _T("CSH Data Loss Prevention Solution"));
@@ -703,10 +702,10 @@ VOID CCSHSensorDlg::PathConfiguration()
 	}
 
 
-	shieldBackgroundImagePath.Format(_T("%s\\CSHSensor.png"), sensorModulePath);
+	sensorBackgroundImagePath.Format(_T("%s\\CSHSensor.png"), sensorModulePath);
 
 
-	shieldConfigurationPath.Format(_T("%s\\CSHSensorConfiguration.ini"), sensorModulePath);
+	sensorConfigurationPath.Format(_T("%s\\CSHSensorConfiguration.ini"), sensorModulePath);
 
 
 	shieldModulePath.Format(_T("%s\\CSHShield.exe"), sensorModulePath);
@@ -721,60 +720,75 @@ VOID CCSHSensorDlg::LoadOracleDataBaseConfiguration()
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	TCHAR currentOracleUserID[128];
+	TCHAR configuredOracleUserID[128];
 
-	memset(currentOracleUserID, NULL, sizeof(currentOracleUserID));
-
-
-	GetPrivateProfileString(_T("CONFIGURATION"), _T("ORACLEUSERNAME"), NULL, currentOracleUserID, (DWORD)(128 - 1), shieldConfigurationPath.GetBuffer());
+	memset(configuredOracleUserID, NULL, sizeof(configuredOracleUserID));
 
 
-	shieldConfigurationPath.ReleaseBuffer();
+	GetPrivateProfileString(_T("CONFIGURATION"), _T("ORACLEUSERNAME"), NULL, configuredOracleUserID, (DWORD)(128 - 1), sensorConfigurationPath.GetBuffer());
 
 
-	TCHAR currentOracleUserPassword[128];
-
-	memset(currentOracleUserPassword, NULL, sizeof(currentOracleUserPassword));
+	sensorConfigurationPath.ReleaseBuffer();
 
 
-	GetPrivateProfileString(_T("CONFIGURATION"), _T("ORACLEUSERPASSWORD"), NULL, currentOracleUserPassword, (DWORD)(128 - 1), shieldConfigurationPath.GetBuffer());
+	TCHAR configuredOracleUserPassword[128];
+
+	memset(configuredOracleUserPassword, NULL, sizeof(configuredOracleUserPassword));
 
 
-	shieldConfigurationPath.ReleaseBuffer();
+	GetPrivateProfileString(_T("CONFIGURATION"), _T("ORACLEUSERPASSWORD"), NULL, configuredOracleUserPassword, (DWORD)(128 - 1), sensorConfigurationPath.GetBuffer());
 
 
-	TCHAR currentOracleServiceName[128];
-
-	memset(currentOracleServiceName, NULL, sizeof(currentOracleServiceName));
+	sensorConfigurationPath.ReleaseBuffer();
 
 
-	GetPrivateProfileString(_T("CONFIGURATION"), _T("ORACLESERVICENAME"), NULL, currentOracleServiceName, (DWORD)(128 - 1), shieldConfigurationPath.GetBuffer());
+	TCHAR configuredOracleTableName[128];
+
+	memset(configuredOracleTableName, NULL, sizeof(configuredOracleTableName));
 
 
-	shieldConfigurationPath.ReleaseBuffer();
+	GetPrivateProfileString(_T("CONFIGURATION"), _T("ORACLETABLENAME"), NULL, configuredOracleTableName, (DWORD)(128 - 1), sensorConfigurationPath.GetBuffer());
 
 
-	TCHAR currentOracleUserTableName[128];
-
-	memset(currentOracleUserTableName, NULL, sizeof(currentOracleUserTableName));
+	sensorConfigurationPath.ReleaseBuffer();
 
 
-	GetPrivateProfileString(_T("CONFIGURATION"), _T("ORACLEUSERTABLENAME"), NULL, currentOracleUserTableName, (DWORD)(128 - 1), shieldConfigurationPath.GetBuffer());
+	currentActiveUserOracleTableName.Format(_T("%s"), configuredOracleTableName);
 
 
-	shieldConfigurationPath.ReleaseBuffer();
+	TCHAR configuredOracleServiceName[128];
+
+	memset(configuredOracleServiceName, NULL, sizeof(configuredOracleServiceName));
 
 
-	oracleDataBaseUserTableName.Format(_T("%s"), currentOracleUserTableName);
+	GetPrivateProfileString(_T("CONFIGURATION"), _T("ORACLESERVICENAME"), NULL, configuredOracleServiceName, (DWORD)(128 - 1), sensorConfigurationPath.GetBuffer());
 
 
-	pCSHSensorOracleDataBase = new CCSHSensorOracleDataBase(currentOracleUserID, currentOracleUserPassword, currentOracleServiceName);
+	sensorConfigurationPath.ReleaseBuffer();
 
 
-	if (pCSHSensorOracleDataBase != NULL)
+	pCSHSensorOracleDataBase = new CCSHSensorOracleDataBase(configuredOracleUserID, configuredOracleUserPassword, configuredOracleTableName, configuredOracleServiceName);
+
+
+	if (pCSHSensorOracleDataBase == NULL)
 	{
-		pCSHSensorOracleDataBase->CreateOracleInstanceEnvironment();
+		CString errorMessage;
+
+
+		errorMessage.Format(_T("new Failed, GetLastError Code = %ld"), GetLastError());
+
+
+		MessageBox(errorMessage, _T("CSHSensor"), (MB_OK | MB_ICONERROR | MB_TOPMOST));
+
+
+		EndDialog(NULL);
+
+
+		return;
 	}
+
+
+	pCSHSensorOracleDataBase->CreateOracleInstanceEnvironment();
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -926,7 +940,13 @@ VOID CCSHSensorDlg::AuthenticateStatusPathConfiguration()
 
 	if (currentActiveUserRegistryStatus != ERROR_SUCCESS)
 	{
-		MessageBox(_T("Unable To Verify System Session Information, Please Check Module \"CSHService.exe\""), _T("CSHSensor"), (MB_OK | MB_ICONERROR | MB_TOPMOST));
+		CString errorMessage;
+
+
+		errorMessage.Format(_T("Unable To Verify System Session Information, Please Check Module \"CSHService.exe\""));
+
+
+		MessageBox(errorMessage, _T("CSHSensor"), (MB_OK | MB_ICONERROR | MB_TOPMOST));
 
 
 		EndDialog(NULL);
@@ -937,6 +957,24 @@ VOID CCSHSensorDlg::AuthenticateStatusPathConfiguration()
 
 
 	pCCSHSensorCryptography = new CCSHSensorCryptography();
+
+
+	if (pCSHSensorOracleDataBase == NULL)
+	{
+		CString errorMessage;
+
+
+		errorMessage.Format(_T("new Failed, GetLastError Code = %ld"), GetLastError());
+
+
+		MessageBox(errorMessage, _T("CSHSensor"), (MB_OK | MB_ICONERROR | MB_TOPMOST));
+
+
+		EndDialog(NULL);
+
+
+		return;
+	}
 
 
 	DWORD dwCurrentActiveUser = (DWORD)(512 - 1);
@@ -961,9 +999,6 @@ VOID CCSHSensorDlg::AuthenticateStatusPathConfiguration()
 
 
 	currentActiveUserRegistryController.QueryStringValue(_T("userSessionToken"), currentActiveUserSessionToken, &dwCurrentActiveUser);
-	
-	
-	_stprintf_s(currentActiveUserSessionTokenPlain, currentActiveUserSessionToken);
 
 
 	pCCSHSensorCryptography->ARIAEncrypt(currentActiveUserSessionToken);
@@ -981,13 +1016,10 @@ VOID CCSHSensorDlg::AuthenticateStatusPathConfiguration()
 	CString signOutSQLTransactionStatementBuillder;
 
 
-	signOutSQLTransactionStatementBuillder.Format(_T("UPDATE %s SET USER_TIMEOUTSTAMP=NULL, USER_IPADDRESS=NULL, USER_MACADDRESS=NULL, USER_SESSIONTOKEN=NULL, USER_SIGNIN='%s' WHERE USER_SESSIONTOKEN='%s'"), oracleDataBaseUserTableName.GetBuffer(), pCCSHSensorCryptography->cryptedWideStringN, currentActiveUserSessionToken);
+	signOutSQLTransactionStatementBuillder.Format(_T("UPDATE %s SET USER_TIMEOUTSTAMP=NULL, USER_IPADDRESS=NULL, USER_MACADDRESS=NULL, USER_SESSIONTOKEN=NULL, USER_SIGNIN='%s' WHERE USER_SESSIONTOKEN='%s'"), currentActiveUserOracleTableName.GetBuffer(), pCCSHSensorCryptography->cryptedWideStringN, currentActiveUserSessionToken);
 
 
-	oracleDataBaseUserTableName.ReleaseBuffer();
-
-
-	pCSHSensorOracleDataBase->currentOracleDataBaseConfigurationFlag = FALSE;
+	currentActiveUserOracleTableName.ReleaseBuffer();
 
 
 	pCSHSensorOracleDataBase->CreateOracleInstanceConnection();
@@ -1249,10 +1281,10 @@ BOOL CCSHSensorDlg::InvestigateUserAuthenticateStatus()
 		CString signInSQLTransactionStatementBuillder;
 
 
-		signInSQLTransactionStatementBuillder.Format(_T("UPDATE %s SET "), oracleDataBaseUserTableName.GetBuffer());
+		signInSQLTransactionStatementBuillder.Format(_T("UPDATE %s SET "), currentActiveUserOracleTableName.GetBuffer());
 
 
-		oracleDataBaseUserTableName.ReleaseBuffer();
+		currentActiveUserOracleTableName.ReleaseBuffer();
 
 						
 		if (currentActiveUserRegistryController.QueryStringValue(_T("userID"), queryBuffer, &dwQueryBuffer) == ERROR_SUCCESS)
@@ -1286,13 +1318,10 @@ BOOL CCSHSensorDlg::InvestigateUserAuthenticateStatus()
 				CString investigateSQLTransactionStatementBuillder;
 
 
-				investigateSQLTransactionStatementBuillder.Format(_T("SELECT USER_SIGNUP, USER_SIGNUPSTATUS, USER_SIGNIN, USER_TIMESTAMP, USER_SIGNINCOUNT, USER_PASSWORD FROM %s WHERE USER_ID='%s'"), oracleDataBaseUserTableName.GetBuffer(), currentActiveUserID);
+				investigateSQLTransactionStatementBuillder.Format(_T("SELECT USER_SIGNUP, USER_SIGNUPSTATUS, USER_SIGNIN, USER_TIMESTAMP, USER_SIGNINCOUNT, USER_PASSWORD FROM %s WHERE USER_ID='%s'"), currentActiveUserOracleTableName.GetBuffer(), currentActiveUserID);
 
 
-				oracleDataBaseUserTableName.ReleaseBuffer();
-
-
-				pCSHSensorOracleDataBase->currentOracleDataBaseConfigurationFlag = FALSE;
+				currentActiveUserOracleTableName.ReleaseBuffer();
 
 
 				pCSHSensorOracleDataBase->CreateOracleInstanceConnection();
@@ -1331,9 +1360,6 @@ BOOL CCSHSensorDlg::InvestigateUserAuthenticateStatus()
 
 
 								signInSQLTransactionStatementBuillder.AppendFormat(_T("USER_TIMEOUTSTAMP='%s', USER_IPADDRESS='%s', USER_MACADDRESS='%s', USER_SESSIONTOKEN='%s', USER_SIGNIN='%s', USER_SIGNINCOUNT='%s' WHERE USER_ID='%s'"), queryBuffer, currentActiveUserIPAddress, currentActiveUserMACAddress, currentActiveUserSessionToken, pCCSHSensorCryptography->cryptedWideStringY, pCCSHSensorCryptography->cryptedWideString0, currentActiveUserID);
-
-
-								pCSHSensorOracleDataBase->currentOracleDataBaseConfigurationFlag = FALSE;
 
 
 								pCSHSensorOracleDataBase->CreateOracleInstanceConnection();
@@ -1433,10 +1459,10 @@ VOID CCSHSensorDlg::SignUpDisplay()
 	DOUBLE currentSignUpDisplayTop = NULL;
 
 
-	currentSignUpDisplayLeft = (DOUBLE)(currentSignUpDisplayWidth * 0.54);
+	currentSignUpDisplayLeft = (currentSignUpDisplayWidth * 0.54);
 
 
-	currentSignUpDisplayTop = (DOUBLE)(currentSignUpDisplayHeight * 0.73);
+	currentSignUpDisplayTop = (currentSignUpDisplayHeight * 0.73);
 
 
 	signUpIDStatic.MoveWindow((INT)currentSignUpDisplayLeft, (INT)currentSignUpDisplayTop, (INT)(currentSignUpDisplayWidth * 0.2), (INT)(currentSignUpDisplayHeight * 0.1));
@@ -1445,10 +1471,10 @@ VOID CCSHSensorDlg::SignUpDisplay()
 	signUpIDStatic.SetWindowText(_T("ID :"));
 
 
-	currentSignUpDisplayLeft = (DOUBLE)(currentSignUpDisplayWidth * 0.585);
+	currentSignUpDisplayLeft = (currentSignUpDisplayWidth * 0.585);
 
 
-	currentSignUpDisplayTop = (DOUBLE)(currentSignUpDisplayHeight * 0.72);
+	currentSignUpDisplayTop = (currentSignUpDisplayHeight * 0.72);
 
 
 	signUpIDEdit.MoveWindow((INT)currentSignUpDisplayLeft, (INT)currentSignUpDisplayTop, (INT)(currentSignUpDisplayWidth * 0.375), (INT)(currentSignUpDisplayHeight * 0.065));
@@ -1460,10 +1486,10 @@ VOID CCSHSensorDlg::SignUpDisplay()
 	signUpIDEdit.SetFocus();
 
 
-	currentSignUpDisplayLeft = (DOUBLE)(currentSignUpDisplayWidth * 0.528);
+	currentSignUpDisplayLeft = (currentSignUpDisplayWidth * 0.528);
 
 
-	currentSignUpDisplayTop = (DOUBLE)(currentSignUpDisplayHeight * 0.8);
+	currentSignUpDisplayTop = (currentSignUpDisplayHeight * 0.8);
 
 
 	signUpPasswordStatic.MoveWindow((INT)currentSignUpDisplayLeft, (INT)currentSignUpDisplayTop, (INT)(currentSignUpDisplayWidth * 0.2), (INT)(currentSignUpDisplayHeight * 0.1));
@@ -1472,10 +1498,10 @@ VOID CCSHSensorDlg::SignUpDisplay()
 	signUpPasswordStatic.SetWindowText(_T("PW :"));
 
 
-	currentSignUpDisplayLeft = (DOUBLE)(currentSignUpDisplayWidth * 0.585);
+	currentSignUpDisplayLeft = (currentSignUpDisplayWidth * 0.585);
 
 
-	currentSignUpDisplayTop = (DOUBLE)(currentSignUpDisplayHeight * 0.79);
+	currentSignUpDisplayTop = (currentSignUpDisplayHeight * 0.79);
 
 
 	signUpPasswordEdit.MoveWindow((INT)currentSignUpDisplayLeft, (INT)currentSignUpDisplayTop, (INT)(currentSignUpDisplayWidth * 0.375), (INT)(currentSignUpDisplayHeight * 0.065));
@@ -1487,10 +1513,10 @@ VOID CCSHSensorDlg::SignUpDisplay()
 	signUpPasswordEdit.SetPasswordChar('*');
 
 
-	currentSignUpDisplayLeft = (DOUBLE)(currentSignUpDisplayWidth * 0.65);
+	currentSignUpDisplayLeft = (currentSignUpDisplayWidth * 0.65);
 
 
-	currentSignUpDisplayTop = (DOUBLE)(currentSignUpDisplayHeight * 0.865);
+	currentSignUpDisplayTop = (currentSignUpDisplayHeight * 0.865);
 
 
 	signUpConfirmButton.MoveWindow((INT)currentSignUpDisplayLeft, (INT)currentSignUpDisplayTop, (INT)(currentSignUpDisplayWidth * 0.15), (INT)(currentSignUpDisplayHeight * 0.075));
@@ -1499,10 +1525,10 @@ VOID CCSHSensorDlg::SignUpDisplay()
 	signUpConfirmButton.SetWindowText(_T("Confirm"));
 
 
-	currentSignUpDisplayLeft = (DOUBLE)(currentSignUpDisplayWidth * 0.81);
+	currentSignUpDisplayLeft = (currentSignUpDisplayWidth * 0.81);
 
 
-	currentSignUpDisplayTop = (DOUBLE)(currentSignUpDisplayHeight * 0.865);
+	currentSignUpDisplayTop = (currentSignUpDisplayHeight * 0.865);
 
 
 	signUpCancleButton.MoveWindow((INT)currentSignUpDisplayLeft, (INT)currentSignUpDisplayTop, (INT)(currentSignUpDisplayWidth * 0.15), (INT)(currentSignUpDisplayHeight * 0.075));
@@ -1552,18 +1578,16 @@ VOID CCSHSensorDlg::GetSystemScreenSaveConfiguration()
 
 			if (!(SystemParametersInfo(SPI_GETSCREENSAVETIMEOUT, NULL, &dwScreenSaveTimeOut, NULL))) 
 			{
-				currentActiveUserSessionTimeout = (ULONGLONG)CSHSENSOR_SESSIONTIMEOUT;
-
-
-				return;
+				currentActiveUserSessionTimeout = CSHSENSOR_SESSIONTIMEOUT;
 			}
-
-
-			currentActiveUserSessionTimeout = (ULONGLONG)dwScreenSaveTimeOut;
+			else
+			{
+				currentActiveUserSessionTimeout = (ULONGLONG)dwScreenSaveTimeOut;
+			}
 		}
 		else
 		{
-			currentActiveUserSessionTimeout = (ULONGLONG)CSHSENSOR_SESSIONTIMEOUT;
+			currentActiveUserSessionTimeout = CSHSENSOR_SESSIONTIMEOUT;
 		}
 
 
@@ -1650,22 +1674,56 @@ LRESULT CCSHSensorDlg::OnCSHSensorUserSignIn(WPARAM wParam, LPARAM lParam)
 			::SendMessage(currentActiveUserShieldProcessHandle, WM_CLOSE, NULL, NULL);
 
 
-			if (!(ShutdownBlockReasonCreate(theApp.m_pMainWnd->GetSafeHwnd(), _T("Sign Out Is Required, Before Shutting Down The System"))))
-			{
-				CString errorMessage;
+			#ifndef _UNICODE
 
 
-				errorMessage.Format(_T("ShutdownBlockReasonCreate Failed, GetLastError Code = %ld"), GetLastError());
+				CHAR targetBlockReason[128];
+
+				memset(targetBlockReason, NULL, sizeof(targetBlockReason));
 
 
-				MessageBox(errorMessage, _T("CSHSensor"), (MB_OK | MB_ICONERROR | MB_TOPMOST));
+				_stprintf_s(targetBlockReason, _T("Sign Out Is Required, Before Shutting Down The System"));
 
 
-				EndDialog(NULL);
+				INT convertedtargetBlockReasonLength = MultiByteToWideChar(CP_ACP, NULL, targetBlockReason, (INT)strlen(targetBlockReason), NULL, NULL);
 
 
-				return LRESULT();
-			}
+				WCHAR convertedBlockReason[128];
+
+				memset(convertedBlockReason, NULL, sizeof(convertedBlockReason));
+
+
+				MultiByteToWideChar(CP_ACP, NULL, targetBlockReason, (INT)strlen(targetBlockReason), convertedBlockReason, convertedtargetBlockReasonLength);
+
+
+				if (!(ShutdownBlockReasonCreate(theApp.m_pMainWnd->GetSafeHwnd(), convertedBlockReason)))
+				{
+
+
+			#else
+
+
+				if (!(ShutdownBlockReasonCreate(theApp.m_pMainWnd->GetSafeHwnd(), _T("Sign Out Is Required, Before Shutting Down The System"))))
+				{
+
+
+			#endif
+
+			
+					CString errorMessage;
+
+
+					errorMessage.Format(_T("ShutdownBlockReasonCreate Failed, GetLastError Code = %ld"), GetLastError());
+
+
+					MessageBox(errorMessage, _T("CSHSensor"), (MB_OK | MB_ICONERROR | MB_TOPMOST));
+
+
+					EndDialog(NULL);
+
+
+					return LRESULT();
+				}
 
 
 			CString notifyInformationMessage(currentActiveUserNotificationDisplayID);
@@ -1733,13 +1791,10 @@ VOID CCSHSensorDlg::OnCSHSensorUserSignOut()
 	CString signOutSQLTransactionStatementBuillder;
 
 
-	signOutSQLTransactionStatementBuillder.Format(_T("UPDATE %s SET USER_TIMEOUTSTAMP=NULL, USER_IPADDRESS=NULL, USER_MACADDRESS=NULL, USER_SESSIONTOKEN=NULL, USER_SIGNIN='%s' WHERE USER_SESSIONTOKEN='%s'"), oracleDataBaseUserTableName.GetBuffer(), pCCSHSensorCryptography->cryptedWideStringN, currentActiveUserSessionToken);
+	signOutSQLTransactionStatementBuillder.Format(_T("UPDATE %s SET USER_TIMEOUTSTAMP=NULL, USER_IPADDRESS=NULL, USER_MACADDRESS=NULL, USER_SESSIONTOKEN=NULL, USER_SIGNIN='%s' WHERE USER_SESSIONTOKEN='%s'"), currentActiveUserOracleTableName.GetBuffer(), pCCSHSensorCryptography->cryptedWideStringN, currentActiveUserSessionToken);
 
 
-	oracleDataBaseUserTableName.ReleaseBuffer();
-
-
-	pCSHSensorOracleDataBase->currentOracleDataBaseConfigurationFlag = FALSE;
+	currentActiveUserOracleTableName.ReleaseBuffer();
 
 
 	pCSHSensorOracleDataBase->CreateOracleInstanceConnection();
@@ -1880,13 +1935,10 @@ VOID CCSHSensorDlg::OnSignUpConfirm()
 	CString investigateSQLTransactionStatementBuillder;
 
 
-	investigateSQLTransactionStatementBuillder.Format(_T("SELECT USER_ID, USER_SIGNUP FROM %s WHERE USER_ID='%s'"), oracleDataBaseUserTableName.GetBuffer(), currentActiveUserSignUpID);
+	investigateSQLTransactionStatementBuillder.Format(_T("SELECT USER_ID, USER_SIGNUP FROM %s WHERE USER_ID='%s'"), currentActiveUserOracleTableName.GetBuffer(), currentActiveUserSignUpID);
 
 
-	oracleDataBaseUserTableName.ReleaseBuffer();
-
-
-	pCSHSensorOracleDataBase->currentOracleDataBaseConfigurationFlag = FALSE;
+	currentActiveUserOracleTableName.ReleaseBuffer();
 
 
 	pCSHSensorOracleDataBase->CreateOracleInstanceConnection();
@@ -1903,13 +1955,10 @@ VOID CCSHSensorDlg::OnSignUpConfirm()
 		CString signUpSQLTransactionStatementBuillder;
 
 
-		signUpSQLTransactionStatementBuillder.Format(_T("UPDATE %s SET USER_PASSWORD='%s', USER_SIGNUP='%s' WHERE USER_ID='%s'"), oracleDataBaseUserTableName.GetBuffer(), currentActiveUserSignUpPassword, pCCSHSensorCryptography->cryptedWideStringN, currentActiveUserSignUpID);
+		signUpSQLTransactionStatementBuillder.Format(_T("UPDATE %s SET USER_PASSWORD='%s', USER_SIGNUP='%s' WHERE USER_ID='%s'"), currentActiveUserOracleTableName.GetBuffer(), currentActiveUserSignUpPassword, pCCSHSensorCryptography->cryptedWideStringN, currentActiveUserSignUpID);
 
 
-		oracleDataBaseUserTableName.ReleaseBuffer();
-
-
-		pCSHSensorOracleDataBase->currentOracleDataBaseConfigurationFlag = FALSE;
+		currentActiveUserOracleTableName.ReleaseBuffer();
 
 
 		pCSHSensorOracleDataBase->CreateOracleInstanceConnection();
@@ -1982,7 +2031,7 @@ VOID CCSHSensorDlg::OnTimer(UINT_PTR nIDEvent)
 			}
 
 
-			if ((ULONGLONG)(GetTickCount64() - currentActiveUserLastInputInformation.dwTime) > (ULONGLONG)(currentActiveUserSessionTimeout * 1000))
+			if ((GetTickCount64() - (ULONGLONG)currentActiveUserLastInputInformation.dwTime) > (currentActiveUserSessionTimeout * (ULONGLONG)1000))
 			{
 				OnCSHSensorUserSignOut();
 
@@ -1991,7 +2040,7 @@ VOID CCSHSensorDlg::OnTimer(UINT_PTR nIDEvent)
 			}
 
 
-			if ((ULONGLONG)(GetTickCount64() - currentActiveUserLastInputInformation.dwTime) < (ULONGLONG)(30 * 1000))
+			if ((GetTickCount64() - (ULONGLONG)currentActiveUserLastInputInformation.dwTime) < (ULONGLONG)(30 * 1000))
 			{
 				CTime currentActiveUserSignInTimeOut = (CTime::GetCurrentTime() + CTimeSpan(NULL, NULL, 30, NULL));
 
@@ -2016,13 +2065,10 @@ VOID CCSHSensorDlg::OnTimer(UINT_PTR nIDEvent)
 				CString timeOutSQLTransactionStatementBuillder;
 
 
-				timeOutSQLTransactionStatementBuillder.Format(_T("UPDATE %s SET USER_TIMEOUTSTAMP='%s' WHERE USER_ID='%s'"), oracleDataBaseUserTableName.GetBuffer(), currentActiveUserSignInTimeOutStamp, currentActiveUserID);
+				timeOutSQLTransactionStatementBuillder.Format(_T("UPDATE %s SET USER_TIMEOUTSTAMP='%s' WHERE USER_ID='%s'"), currentActiveUserOracleTableName.GetBuffer(), currentActiveUserSignInTimeOutStamp, currentActiveUserID);
 
 
-				oracleDataBaseUserTableName.ReleaseBuffer();
-
-
-				pCSHSensorOracleDataBase->currentOracleDataBaseConfigurationFlag = FALSE;
+				currentActiveUserOracleTableName.ReleaseBuffer();
 
 
 				pCSHSensorOracleDataBase->CreateOracleInstanceConnection();

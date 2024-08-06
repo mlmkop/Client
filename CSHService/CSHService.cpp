@@ -51,30 +51,30 @@ INT _tmain(INT argc, TCHAR *argv[])
 			}
 			else
 			{
-				_tprintf(_T("\n\n"));
+				_tprintf_s(_T("\n\n"));
 
 			
-				_tprintf(_T("Please Check The Second Option For Use\n\n"));
+				_tprintf_s(_T("Please Check The Second Option For Use\n\n"));
 
 
-				_tprintf(_T("Parameter : [ -i or /i ], It Means To Install CSH Data Loss Prevention Solution\n\n"));
+				_tprintf_s(_T("Parameter : [ -i or /i ], It Means To Install CSH Data Loss Prevention Solution\n\n"));
 
 
-				_tprintf(_T("Parameter : [ -u or /u ], It Means To Uninstall CSH Data Loss Prevention Solution\n\n"));
+				_tprintf_s(_T("Parameter : [ -u or /u ], It Means To Uninstall CSH Data Loss Prevention Solution\n\n"));
 			}
 		}
 		else
 		{
-			_tprintf(_T("\n\n"));
+			_tprintf_s(_T("\n\n"));
 
 
-			_tprintf(_T("Please Check The Second Option For Use\n\n"));
+			_tprintf_s(_T("Please Check The Second Option For Use\n\n"));
 
 
-			_tprintf(_T("Parameter : [ -i or /i ], It Means To Install CSH Data Loss Prevention Solution\n\n"));
+			_tprintf_s(_T("Parameter : [ -i or /i ], It Means To Install CSH Data Loss Prevention Solution\n\n"));
 
 
-			_tprintf(_T("Parameter : [ -u or /u ], It Means To Uninstall CSH Data Loss Prevention Solution\n\n"));
+			_tprintf_s(_T("Parameter : [ -u or /u ], It Means To Uninstall CSH Data Loss Prevention Solution\n\n"));
 		}
 	}
 

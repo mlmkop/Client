@@ -29,12 +29,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-using namespace std;
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 typedef struct _SESSIONPROCESSMANAGER
 {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -66,7 +60,7 @@ typedef struct _SESSIONPROCESSMANAGER
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-extern vector<SESSIONPROCESSMANAGER *> sessionProcessManager;
+extern std::vector<SESSIONPROCESSMANAGER *> sessionProcessManager;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -109,19 +103,19 @@ typedef struct _SESSIONMANAGER
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-extern vector<SESSIONMANAGER *> sessionManager;
+extern std::vector<SESSIONMANAGER *> sessionManager;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-extern BOOL closeSensorProcessFlag;
+extern volatile BOOL closeSensorProcessFlag;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-DWORD WINAPI EachUserSessionWatchThread(VOID *lpVoid)
+DWORD EachUserSessionWatchThread(VOID *lpVoid)
 {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -166,19 +160,18 @@ DWORD WINAPI EachUserSessionWatchThread(VOID *lpVoid)
 					ServiceLogger(_T("[ %s : %d ] Target Process ID Detected, pCurrentSessionManager->userPi.dwProcessId = %ld, processEntry32.th32ProcessID = %ld"), _T(__FUNCTION__), __LINE__, pCurrentSessionManager->currentUserProcessInformation.dwProcessId, processEntry32.th32ProcessID);
 
 
-					CString currentActiveUserRegistryPath;
+					TCHAR currentActiveUserRegistryPath[128];
+
+					memset(currentActiveUserRegistryPath, NULL, sizeof(currentActiveUserRegistryPath));
 
 
-					currentActiveUserRegistryPath.Format(_T("%s\\SOFTWARE\\CSHDLP"), pCurrentSessionManager->currentUserSID);
+					_stprintf_s(currentActiveUserRegistryPath, _T("%s\\SOFTWARE\\CSHDLP"), pCurrentSessionManager->currentUserSID);
 
 
 					HKEY currentActiveUserRegistryKey;
 
 
-					LSTATUS currentActiveUserRegistryStatus = RegCreateKey(HKEY_USERS, currentActiveUserRegistryPath.GetBuffer(), &currentActiveUserRegistryKey);
-
-
-					currentActiveUserRegistryPath.ReleaseBuffer();
+					LSTATUS currentActiveUserRegistryStatus = RegCreateKey(HKEY_USERS, currentActiveUserRegistryPath, &currentActiveUserRegistryKey);
 
 
 					if (currentActiveUserRegistryStatus != ERROR_SUCCESS) 
@@ -223,16 +216,7 @@ DWORD WINAPI EachUserSessionWatchThread(VOID *lpVoid)
 					ServiceLogger(_T("[ %s : %d ] Initializing To %s User's %s Residual Token Data"), _T(__FUNCTION__), __LINE__, pCurrentSessionManager->currentUserName, currentActiveUserRegistryPath);
 
 
-					CString currentActiveUserSessionToken;
-
-
-					currentActiveUserSessionToken.Format(_T("%s|%s|%s"), pCurrentSessionManager->currentUserIP, pCurrentSessionManager->currentUserName, pCurrentSessionManager->currentUserMAC);
-
-
-					_stprintf_s(pCurrentSessionManager->currentUserSessionToken, currentActiveUserSessionToken.GetBuffer());
-
-
-					currentActiveUserSessionToken.ReleaseBuffer();
+					_stprintf_s(pCurrentSessionManager->currentUserSessionToken, _T("%s|%s|%s"), pCurrentSessionManager->currentUserIP, pCurrentSessionManager->currentUserName, pCurrentSessionManager->currentUserMAC);
 
 
 					registryController.SetStringValue(_T("userSessionToken"), pCurrentSessionManager->currentUserSessionToken);
@@ -319,51 +303,99 @@ DWORD GetCurrentActiveUserAdapterInformation(SESSIONMANAGER *pCurrentSession)
 
 	while (pIpAdapterAddresses != NULL)
 	{
-		if ((_tcsstr(pIpAdapterAddresses->Description, _T("Virtual")) == NULL) && (_tcsstr(pIpAdapterAddresses->Description, _T("Pseudo")) == NULL))
-		{
-			if (pIpAdapterAddresses->IfType == IF_TYPE_ETHERNET_CSMACD)
+		#ifndef _UNICODE
+
+
+			CHAR targetDescription[128];
+
+			memset(targetDescription, NULL, sizeof(targetDescription));
+
+
+			_stprintf_s(targetDescription, _T("Virtual"));
+
+
+			INT convertedTargetDescriptionLength = MultiByteToWideChar(CP_ACP, NULL, targetDescription, (INT)_tcslen(targetDescription), NULL, NULL);
+
+
+			WCHAR convertedVirtualDescription[128];
+
+			memset(convertedVirtualDescription, NULL, sizeof(convertedVirtualDescription));
+
+
+			MultiByteToWideChar(CP_ACP, NULL, targetDescription, (INT)_tcslen(targetDescription), convertedVirtualDescription, convertedTargetDescriptionLength);
+
+
+			_stprintf_s(targetDescription, _T("Pseudo"));
+
+
+			convertedTargetDescriptionLength = MultiByteToWideChar(CP_ACP, NULL, targetDescription, (INT)_tcslen(targetDescription), NULL, NULL);
+
+
+			WCHAR convertedPseudoDescription[128];
+
+			memset(convertedPseudoDescription, NULL, sizeof(convertedPseudoDescription));
+
+
+			MultiByteToWideChar(CP_ACP, NULL, targetDescription, (INT)_tcslen(targetDescription), convertedPseudoDescription, convertedTargetDescriptionLength);
+
+
+			if ((wcsstr(pIpAdapterAddresses->Description, convertedVirtualDescription) == NULL) && (wcsstr(pIpAdapterAddresses->Description, convertedPseudoDescription) == NULL))
 			{
-				CHAR currentActiveAdapterUnicastIpAddress[128];
-
-				memset(currentActiveAdapterUnicastIpAddress, NULL, sizeof(currentActiveAdapterUnicastIpAddress));
 
 
-				if (getnameinfo(pIpAdapterAddresses->FirstUnicastAddress->Address.lpSockaddr, pIpAdapterAddresses->FirstUnicastAddress->Address.iSockaddrLength, currentActiveAdapterUnicastIpAddress, sizeof(currentActiveAdapterUnicastIpAddress), NULL, NULL, NI_NUMERICHOST) != NULL)
+		#else
+
+
+			if ((_tcsstr(pIpAdapterAddresses->Description, _T("Virtual")) == NULL) && (_tcsstr(pIpAdapterAddresses->Description, _T("Pseudo")) == NULL))
+			{
+
+
+		#endif
+		
+
+				if (pIpAdapterAddresses->IfType == IF_TYPE_ETHERNET_CSMACD)
 				{
-					returnCode = (DWORD)WSAGetLastError();
+					CHAR currentActiveAdapterUnicastIpAddress[128];
+
+					memset(currentActiveAdapterUnicastIpAddress, NULL, sizeof(currentActiveAdapterUnicastIpAddress));
 
 
-					ServiceLogger(_T("[ %s : %d ] getnameinfo Failed, WSAGetLastError Code = %ld"), _T(__FUNCTION__), __LINE__, returnCode);
+					if (getnameinfo(pIpAdapterAddresses->FirstUnicastAddress->Address.lpSockaddr, pIpAdapterAddresses->FirstUnicastAddress->Address.iSockaddrLength, currentActiveAdapterUnicastIpAddress, sizeof(currentActiveAdapterUnicastIpAddress), NULL, NULL, NI_NUMERICHOST) != NULL)
+					{
+						returnCode = (DWORD)WSAGetLastError();
+
+
+						ServiceLogger(_T("[ %s : %d ] getnameinfo Failed, WSAGetLastError Code = %ld"), _T(__FUNCTION__), __LINE__, returnCode);
+
+
+						break;
+					}
+
+
+					CString convertedCurrentActiveAdapterUnicastIpAddress(currentActiveAdapterUnicastIpAddress);
+
+
+					_stprintf_s(pCurrentSession->currentUserIP, convertedCurrentActiveAdapterUnicastIpAddress.GetBuffer());
+
+
+					convertedCurrentActiveAdapterUnicastIpAddress.ReleaseBuffer();
+
+
+					CString convertedCurrentActiveAdapterUnicastMACAddress;
+
+
+					convertedCurrentActiveAdapterUnicastMACAddress.Format(_T("%02X:%02X:%02X:%02X:%02X:%02X"), pIpAdapterAddresses->PhysicalAddress[0], pIpAdapterAddresses->PhysicalAddress[1], pIpAdapterAddresses->PhysicalAddress[2], pIpAdapterAddresses->PhysicalAddress[3], pIpAdapterAddresses->PhysicalAddress[4], pIpAdapterAddresses->PhysicalAddress[5]);
+
+
+					_stprintf_s(pCurrentSession->currentUserMAC, convertedCurrentActiveAdapterUnicastMACAddress.GetBuffer());
+
+
+					convertedCurrentActiveAdapterUnicastMACAddress.ReleaseBuffer();
 
 
 					break;
 				}
-
-
-				CString convertedCurrentActiveAdapterUnicastIpAddress(currentActiveAdapterUnicastIpAddress);
-
-
-				_stprintf_s(pCurrentSession->currentUserIP, convertedCurrentActiveAdapterUnicastIpAddress.GetBuffer());
-
-
-				convertedCurrentActiveAdapterUnicastIpAddress.ReleaseBuffer();
-
-
-				CString convertedCurrentActiveAdapterUnicastMACAddress;
-
-
-				convertedCurrentActiveAdapterUnicastMACAddress.Format(_T("%02X:%02X:%02X:%02X:%02X:%02X"), pIpAdapterAddresses->PhysicalAddress[0], pIpAdapterAddresses->PhysicalAddress[1], pIpAdapterAddresses->PhysicalAddress[2], pIpAdapterAddresses->PhysicalAddress[3], pIpAdapterAddresses->PhysicalAddress[4], pIpAdapterAddresses->PhysicalAddress[5]);
-
-
-				_stprintf_s(pCurrentSession->currentUserMAC, convertedCurrentActiveAdapterUnicastMACAddress.GetBuffer());
-
-
-				convertedCurrentActiveAdapterUnicastMACAddress.ReleaseBuffer();
-
-
-				break;
 			}
-		}
 
 
 		pIpAdapterAddresses = pIpAdapterAddresses->Next;
@@ -377,7 +409,7 @@ DWORD GetCurrentActiveUserAdapterInformation(SESSIONMANAGER *pCurrentSession)
 }
 
 
-HANDLE RegistEachUserSession(SESSIONMANAGER *pCurrentSessionManager, DWORD currentActiveSessionId, DWORD dwQueryBuffer, LPCTSTR queryBuffer)
+HANDLE RegistEachUserSession(SESSIONMANAGER *pCurrentSessionManager, DWORD currentActiveSessionId, LPCTSTR queryBuffer)
 {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -388,7 +420,7 @@ HANDLE RegistEachUserSession(SESSIONMANAGER *pCurrentSessionManager, DWORD curre
 	pCurrentSessionManager->currentUserSessionID = currentActiveSessionId;
 
 
-	_stprintf_s(pCurrentSessionManager->currentUserName, dwQueryBuffer, queryBuffer);
+	_stprintf_s(pCurrentSessionManager->currentUserName, queryBuffer);
 
 
 	HANDLE currentActiveUserProcessHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pCurrentSessionManager->currentUserProcessInformation.dwProcessId);
@@ -533,7 +565,7 @@ HANDLE RegistEachUserSession(SESSIONMANAGER *pCurrentSessionManager, DWORD curre
 }
 
 
-DWORD WINAPI EstablishProcessEachUserSessionThread(VOID *lpVoid)
+DWORD EstablishProcessEachUserSessionThread(VOID *lpVoid)
 {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -649,7 +681,7 @@ DWORD WINAPI EstablishProcessEachUserSessionThread(VOID *lpVoid)
 		tokenPriVileges.Privileges[0].Luid = luid;
 
 
-		tokenPriVileges.Privileges[0].Attributes = (DWORD)SE_PRIVILEGE_ENABLED;
+		tokenPriVileges.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 
 
 		if (!(AdjustTokenPrivileges(currentActiveSystemProcessToken, FALSE, &tokenPriVileges, sizeof(tokenPriVileges), NULL, NULL)))
@@ -813,7 +845,7 @@ DWORD WINAPI EstablishProcessEachUserSessionThread(VOID *lpVoid)
 		currentActiveSystemProcessHandle = NULL;
 
 
-		HANDLE currentEachUserSessionWatchThreadHandle = RegistEachUserSession(pCurrentSessionManager, pCurrentSessionProcessManager->currentActiveSessionId, pCurrentSessionProcessManager->currentDwQueryBuffer, pCurrentSessionProcessManager->currentQueryBuffer);
+		HANDLE currentEachUserSessionWatchThreadHandle = RegistEachUserSession(pCurrentSessionManager, pCurrentSessionProcessManager->currentActiveSessionId, pCurrentSessionProcessManager->currentQueryBuffer);
 
 
 		if (currentEachUserSessionWatchThreadHandle == NULL)
@@ -841,7 +873,7 @@ DWORD WINAPI EstablishProcessEachUserSessionThread(VOID *lpVoid)
 	}
 
 
-	vector<SESSIONMANAGER *>::iterator currentSessionCursor = sessionManager.begin();
+	std::vector<SESSIONMANAGER *>::iterator currentSessionCursor = sessionManager.begin();
 
 
 	for (size_t index = NULL; index < sessionManager.size(); index++, currentSessionCursor++)
@@ -871,7 +903,7 @@ DWORD WINAPI EstablishProcessEachUserSessionThread(VOID *lpVoid)
 	ServiceLogger(_T("[ %s : %d ] Remove session Done, Current sessionManager's Size = %ld"), _T(__FUNCTION__), __LINE__, sessionManager.size());
 
 
-	vector<SESSIONPROCESSMANAGER *>::iterator currentSessionProcessCursor = sessionProcessManager.begin();
+	std::vector<SESSIONPROCESSMANAGER *>::iterator currentSessionProcessCursor = sessionProcessManager.begin();
 
 
 	for (size_t index = NULL; index < sessionProcessManager.size(); index++, currentSessionProcessCursor++)
@@ -989,7 +1021,7 @@ VOID CreateSensorProcess(VOID *lpVoid)
 		_stprintf_s(sensorModulePath, _T("%s\\CSHDLP\\%s"), environmentVariablePath, _T("CSHSensor.exe"));
 
 
-		while (TRUE)
+		while (!(closeSensorProcessFlag))
 		{
 			Sleep(1000);
 
@@ -1067,7 +1099,7 @@ VOID CreateSensorProcess(VOID *lpVoid)
 									DWORD dwQueryBuffer = NULL;
 
 
-									if (!(WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE, wtsSessionInfo.SessionId, WTSUserName, &queryBuffer, &dwQueryBuffer)))
+									if (!(WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE, wtsSessionInfo.SessionId, WTS_INFO_CLASS::WTSUserName, &queryBuffer, &dwQueryBuffer)))
 									{
 										ServiceLogger(_T("[ %s : %d ] WTSQuerySessionInformation Failed, GetLastError Code = %ld"), _T(__FUNCTION__), __LINE__, GetLastError());
 
@@ -1115,6 +1147,9 @@ VOID CreateSensorProcess(VOID *lpVoid)
 									if (currentEstablishProcessEachUserSessionThreadHandle == NULL)
 									{
 										ServiceLogger(_T("[ %s : %d ] CreateThread Failed, GetLastError Code = %ld"), _T(__FUNCTION__), __LINE__, GetLastError());
+
+
+										sessionProcessManager.pop_back();
 
 
 										memset(pCurrentSessionProcessManager, NULL, sizeof(SESSIONPROCESSMANAGER));

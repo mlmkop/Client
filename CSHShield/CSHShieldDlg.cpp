@@ -19,12 +19,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-using namespace std;
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 typedef struct _TRAYSESSIONMANAGER
 {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1023,10 +1017,10 @@ VOID CCSHShieldDlg::SignInDisplay()
 	DOUBLE currentSignInDisplayTop = NULL;
 
 		
-	currentSignInDisplayLeft = (DOUBLE)(currentSignInDisplayWidth * 0.54);
+	currentSignInDisplayLeft = (currentSignInDisplayWidth * 0.54);
 
 
-	currentSignInDisplayTop = (DOUBLE)(currentSignInDisplayHeight * 0.73);
+	currentSignInDisplayTop = (currentSignInDisplayHeight * 0.73);
 
 
 	signInIDStatic.MoveWindow((INT)currentSignInDisplayLeft, (INT)currentSignInDisplayTop, (INT)(currentSignInDisplayWidth * 0.2), (INT)(currentSignInDisplayHeight * 0.1));
@@ -1035,10 +1029,10 @@ VOID CCSHShieldDlg::SignInDisplay()
 	signInIDStatic.SetWindowText(_T("ID :"));
 
 
-	currentSignInDisplayLeft = (DOUBLE)(currentSignInDisplayWidth * 0.585);
+	currentSignInDisplayLeft = (currentSignInDisplayWidth * 0.585);
 
 
-	currentSignInDisplayTop = (DOUBLE)(currentSignInDisplayHeight * 0.72);
+	currentSignInDisplayTop = (currentSignInDisplayHeight * 0.72);
 
 
 	signInIDEdit.MoveWindow((INT)currentSignInDisplayLeft, (INT)currentSignInDisplayTop, (INT)(currentSignInDisplayWidth * 0.375), (INT)(currentSignInDisplayHeight * 0.065));
@@ -1050,10 +1044,10 @@ VOID CCSHShieldDlg::SignInDisplay()
 	signInIDEdit.SetFocus();
 
 
-	currentSignInDisplayLeft = (DOUBLE)(currentSignInDisplayWidth * 0.528);
+	currentSignInDisplayLeft = (currentSignInDisplayWidth * 0.528);
 
 
-	currentSignInDisplayTop = (DOUBLE)(currentSignInDisplayHeight * 0.8);
+	currentSignInDisplayTop = (currentSignInDisplayHeight * 0.8);
 
 
 	signInPasswordStatic.MoveWindow((INT)currentSignInDisplayLeft, (INT)currentSignInDisplayTop, (INT)(currentSignInDisplayWidth * 0.2), (INT)(currentSignInDisplayHeight * 0.1));
@@ -1062,10 +1056,10 @@ VOID CCSHShieldDlg::SignInDisplay()
 	signInPasswordStatic.SetWindowText(_T("PW :"));
 
 
-	currentSignInDisplayLeft = (DOUBLE)(currentSignInDisplayWidth * 0.585);
+	currentSignInDisplayLeft = (currentSignInDisplayWidth * 0.585);
 
 
-	currentSignInDisplayTop = (DOUBLE)(currentSignInDisplayHeight * 0.79);
+	currentSignInDisplayTop = (currentSignInDisplayHeight * 0.79);
 
 
 	signInPasswordEdit.MoveWindow((INT)currentSignInDisplayLeft, (INT)currentSignInDisplayTop, (INT)(currentSignInDisplayWidth * 0.375), (INT)(currentSignInDisplayHeight * 0.065));
@@ -1077,10 +1071,10 @@ VOID CCSHShieldDlg::SignInDisplay()
 	signInPasswordEdit.SetPasswordChar('*');
 
 
-	currentSignInDisplayLeft = (DOUBLE)(currentSignInDisplayWidth * 0.65);
+	currentSignInDisplayLeft = (currentSignInDisplayWidth * 0.65);
 
 
-	currentSignInDisplayTop = (DOUBLE)(currentSignInDisplayHeight * 0.865);
+	currentSignInDisplayTop = (currentSignInDisplayHeight * 0.865);
 
 
 	signInButton.MoveWindow((INT)currentSignInDisplayLeft, (INT)currentSignInDisplayTop, (INT)(currentSignInDisplayWidth * 0.15), (INT)(currentSignInDisplayHeight * 0.075));
@@ -1092,10 +1086,10 @@ VOID CCSHShieldDlg::SignInDisplay()
 	signInButton.ShowWindow(SW_SHOW);
 
 
-	currentSignInDisplayLeft = (DOUBLE)(currentSignInDisplayWidth * 0.81);
+	currentSignInDisplayLeft = (currentSignInDisplayWidth * 0.81);
 
 
-	currentSignInDisplayTop = (DOUBLE)(currentSignInDisplayHeight * 0.865);
+	currentSignInDisplayTop = (currentSignInDisplayHeight * 0.865);
 
 
 	signUpButton.MoveWindow((INT)currentSignInDisplayLeft, (INT)currentSignInDisplayTop, (INT)(currentSignInDisplayWidth * 0.15), (INT)(currentSignInDisplayHeight * 0.075));
@@ -1187,7 +1181,7 @@ VOID CCSHShieldDlg::OnSignIn()
 		CString errorMessage;
 
 
-		errorMessage.Format(_T("RegCreateKey Failed, currentActiveUserRegistryStatus Code = %ld"), (DWORD)currentActiveUserRegistryStatus);
+		errorMessage.Format(_T("RegCreateKey Failed, currentActiveUserRegistryStatus Code = %ld"), currentActiveUserRegistryStatus);
 
 
 		MessageBox(errorMessage, _T("CSHShield"), (MB_OK | MB_ICONERROR | MB_TOPMOST));
@@ -1208,7 +1202,7 @@ VOID CCSHShieldDlg::OnSignIn()
 		CString errorMessage;
 
 
-		errorMessage.Format(_T("Open Failed, currentActiveUserRegistryStatus Code = %ld"), (DWORD)currentActiveUserRegistryStatus);
+		errorMessage.Format(_T("Open Failed, currentActiveUserRegistryStatus Code = %ld"), currentActiveUserRegistryStatus);
 
 
 		MessageBox(errorMessage, _T("CSHShield"), (MB_OK | MB_ICONERROR | MB_TOPMOST));
@@ -1245,7 +1239,7 @@ VOID CCSHShieldDlg::OnSignIn()
 	currentActiveUserRegistryController.Close();
 
 
-	::SendMessageTimeout(currentActiveUserSensorProcessHandle, WM_CSHSENSOR_USERSIGNIN, NULL, NULL, (UINT)(SMTO_NORMAL | SMTO_BLOCK), (UINT)1000, NULL);
+	::SendMessageTimeout(currentActiveUserSensorProcessHandle, WM_CSHSENSOR_USERSIGNIN, NULL, NULL, (SMTO_NORMAL | SMTO_BLOCK), (UINT)1000, NULL);
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1257,7 +1251,7 @@ VOID CCSHShieldDlg::OnSignUp()
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	::SendMessageTimeout(currentActiveUserSensorProcessHandle, WM_CSHSENSOR_USERSIGNUP, NULL, NULL, (UINT)(SMTO_NORMAL | SMTO_BLOCK), (UINT)1000, NULL);
+	::SendMessageTimeout(currentActiveUserSensorProcessHandle, WM_CSHSENSOR_USERSIGNUP, NULL, NULL, (SMTO_NORMAL | SMTO_BLOCK), (UINT)1000, NULL);
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

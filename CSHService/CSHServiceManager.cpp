@@ -31,17 +31,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-using namespace std;
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 CCSHServiceManager *CCSHServiceManager::pCCSHServiceManager = NULL;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 typedef struct _WEBSOCKETSESSIONMANAGER
 {
@@ -68,13 +61,13 @@ typedef struct _WEBSOCKETSESSIONMANAGER
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-vector<WEBSOCKETSESSIONMANAGER *> webSocketSessionManager;
+std::vector<WEBSOCKETSESSIONMANAGER *> webSocketSessionManager;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-BOOL closeWebSocketSessionFlag;
+volatile BOOL closeWebSocketSessionFlag;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -117,7 +110,7 @@ typedef struct _SESSIONPROCESSMANAGER
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-vector<SESSIONPROCESSMANAGER *> sessionProcessManager;
+std::vector<SESSIONPROCESSMANAGER *> sessionProcessManager;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -160,13 +153,13 @@ typedef struct _SESSIONMANAGER
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-vector<SESSIONMANAGER *> sessionManager;
+std::vector<SESSIONMANAGER *> sessionManager;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-BOOL closeSensorProcessFlag;
+volatile BOOL closeSensorProcessFlag;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -180,10 +173,10 @@ CCSHServiceManager::CCSHServiceManager(LPTSTR lpServiceName) : serviceName(NULL)
     serviceName = lpServiceName;
 
 
-    serviceStatus.dwServiceType = (DWORD)(SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS);
+    serviceStatus.dwServiceType = (SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS);
 
 
-    serviceStatus.dwControlsAccepted = (DWORD)(SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SESSIONCHANGE);
+    serviceStatus.dwControlsAccepted = (SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SESSIONCHANGE);
     
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -209,7 +202,7 @@ DWORD CCSHServiceManager::ServiceRun(CCSHServiceManager &CSHServiceManager)
     serviceTableEntry.lpServiceName = serviceName;
 
 
-    serviceTableEntry.lpServiceProc = ServiceMain;
+    serviceTableEntry.lpServiceProc = CCSHServiceManager::ServiceMain;
 
 
     if (!(StartServiceCtrlDispatcher(&serviceTableEntry))) 
@@ -234,12 +227,12 @@ DWORD CCSHServiceManager::ServiceRun(CCSHServiceManager &CSHServiceManager)
 }
 
 
-VOID WINAPI CCSHServiceManager::ServiceMain(DWORD dwNumServicesArgs, LPTSTR *lpServiceArgVectors)
+VOID CCSHServiceManager::ServiceMain(DWORD dwNumServicesArgs, LPTSTR *lpServiceArgVectors)
 {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    pCCSHServiceManager->serviceStatusHandle = RegisterServiceCtrlHandlerEx(pCCSHServiceManager->serviceName, (LPHANDLER_FUNCTION_EX)ServiceCtrlHandler, NULL);
+    pCCSHServiceManager->serviceStatusHandle = RegisterServiceCtrlHandlerEx(pCCSHServiceManager->serviceName, (LPHANDLER_FUNCTION_EX)CCSHServiceManager::ServiceCtrlHandler, NULL);
 
 
     if (pCCSHServiceManager->serviceStatusHandle == NULL) 
@@ -264,7 +257,7 @@ VOID WINAPI CCSHServiceManager::ServiceMain(DWORD dwNumServicesArgs, LPTSTR *lpS
 }
 
 
-DWORD WINAPI CCSHServiceManager::ServiceCtrlHandler(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext)
+DWORD CCSHServiceManager::ServiceCtrlHandler(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext)
 {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -303,7 +296,7 @@ DWORD WINAPI CCSHServiceManager::ServiceCtrlHandler(DWORD dwControl, DWORD dwEve
                 DWORD dwQueryBuffer = NULL;
 
 
-                if (!(WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE, wtsSessionNotification.dwSessionId, WTSUserName, &queryBuffer, &dwQueryBuffer)))
+                if (!(WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE, wtsSessionNotification.dwSessionId, WTS_INFO_CLASS::WTSUserName, &queryBuffer, &dwQueryBuffer)))
                 {
                     returnCode = GetLastError();
 
@@ -517,7 +510,9 @@ VOID CCSHServiceManager::ReportErrorEvent(LPTSTR lpCurrentFunctionName, DWORD dw
     }
 
 
-    LPCTSTR eventLogEntry[2] = {NULL, NULL};
+    LPCTSTR eventLogEntry[2];
+
+    memset(eventLogEntry, NULL, sizeof(eventLogEntry));
 
 
     eventLogEntry[0] = serviceName;

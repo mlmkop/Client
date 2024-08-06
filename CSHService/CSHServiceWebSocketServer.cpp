@@ -26,12 +26,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-using namespace std;
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 typedef struct _WEBSOCKETSESSIONMANAGER
 {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -57,13 +51,13 @@ typedef struct _WEBSOCKETSESSIONMANAGER
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-extern vector<WEBSOCKETSESSIONMANAGER *> webSocketSessionManager;
+extern std::vector<WEBSOCKETSESSIONMANAGER *> webSocketSessionManager;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-extern BOOL closeWebSocketSessionFlag;
+extern volatile BOOL closeWebSocketSessionFlag;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -112,7 +106,7 @@ typedef struct _SESSIONMANAGER
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-extern vector<SESSIONMANAGER *> sessionManager;
+extern std::vector<SESSIONMANAGER *> sessionManager;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -266,7 +260,7 @@ DWORD TranslateWebSocketMessage(VOID *lpVoid)
 			ServiceLogger(_T("[ %s : %d ] Detected To WebSocket Connection Disconnect, pCurrentClientWebSocketConnection = %zd"), _T(__FUNCTION__), __LINE__, pCurrentClientWebSocketConnection);
 
 
-			vector<WEBSOCKETSESSIONMANAGER *>::iterator currentWebSocketSessionCursor = webSocketSessionManager.begin();
+			std::vector<WEBSOCKETSESSIONMANAGER *>::iterator currentWebSocketSessionCursor = webSocketSessionManager.begin();
 
 
 			for (size_t index = NULL; index < webSocketSessionManager.size(); index++, currentWebSocketSessionCursor++)
@@ -370,7 +364,7 @@ DWORD TranslateWebSocketMessage(VOID *lpVoid)
 
 		for (UINT64 index = NULL; index < payLoadSize; index++)
 		{
-			pUnMaskedData[index] = (pUnMaskedData[index] ^ mask[(index % (UINT64)4)]);
+			pUnMaskedData[index] = (CHAR)((BYTE)pUnMaskedData[index] ^ mask[(index % (UINT64)4)]);
 		}
 
 
@@ -382,10 +376,22 @@ DWORD TranslateWebSocketMessage(VOID *lpVoid)
 		memset(messageConverter, NULL, sizeof(messageConverter));
 
 
-		INT pUnMaskedDataLength = MultiByteToWideChar(CP_ACP, NULL, pUnMaskedData, (INT)strlen(pUnMaskedData), NULL, NULL);
+		#ifndef _UNICODE
 
 
-		MultiByteToWideChar(CP_ACP, NULL, pUnMaskedData, (INT)strlen(pUnMaskedData), messageConverter, pUnMaskedDataLength);
+			_stprintf_s(messageConverter, pUnMaskedData);
+
+
+		#else
+
+
+			INT pUnMaskedDataLength = MultiByteToWideChar(CP_ACP, NULL, pUnMaskedData, (INT)strlen(pUnMaskedData), NULL, NULL);
+
+
+			MultiByteToWideChar(CP_ACP, NULL, pUnMaskedData, (INT)strlen(pUnMaskedData), messageConverter, pUnMaskedDataLength);
+
+
+		#endif
 
 
 		free(pUnMaskedData);
@@ -508,10 +514,22 @@ DWORD TranslateWebSocketMessage(VOID *lpVoid)
 		}
 
 
-		INT messageConverterLength = WideCharToMultiByte(CP_UTF8, NULL, messageConverter, (INT)_tcslen(messageConverter), NULL, NULL, NULL, NULL);
+		#ifndef _UNICODE
 
 
-		WideCharToMultiByte(CP_UTF8, NULL, messageConverter, (INT)_tcslen(messageConverter), (pCurrentClientWebSocketConnection->currentClientBuffer + maskOffSet), messageConverterLength, NULL, NULL);
+			_stprintf_s((pCurrentClientWebSocketConnection->currentClientBuffer + maskOffSet), (_tcslen(messageConverter) + (size_t)1), messageConverter);
+
+
+		#else
+
+
+			INT messageConverterLength = WideCharToMultiByte(CP_UTF8, NULL, messageConverter, (INT)_tcslen(messageConverter), NULL, NULL, NULL, NULL);
+
+
+			WideCharToMultiByte(CP_UTF8, NULL, messageConverter, (INT)_tcslen(messageConverter), (pCurrentClientWebSocketConnection->currentClientBuffer + maskOffSet), messageConverterLength, NULL, NULL);
+
+
+		#endif
 
 
 		if (send(pCurrentClientWebSocketConnection->currentClientSocket, pCurrentClientWebSocketConnection->currentClientBuffer, (INT)strlen(pCurrentClientWebSocketConnection->currentClientBuffer), NULL) == SOCKET_ERROR)
@@ -584,10 +602,10 @@ DWORD WebSocketClientHandshaking(VOID *lpVoid)
 	endPosition = (keyValueMap.GetLength() - startPosition);
 
 
-	CStringA parsedValue(keyValueMap.Mid((startPosition + 2), endPosition));
+	CString parsedValue(keyValueMap.Mid((startPosition + 2), endPosition));
 
 
-	parsedValue.Append("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+	parsedValue.Append(_T("258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
 
 
 	HCRYPTPROV cryptProvHandle;
@@ -631,10 +649,25 @@ DWORD WebSocketClientHandshaking(VOID *lpVoid)
 	memset(encodedData, NULL, sizeof(encodedData));
 
 
-	sprintf_s((LPSTR)encodedData, (size_t)(128 - 1), parsedValue.GetBuffer());
+	#ifndef _UNICODE
 
 
-	parsedValue.ReleaseBuffer();
+		_stprintf_s((LPSTR)(encodedData), (size_t)(parsedValue.GetLength() + 1), parsedValue.GetBuffer());
+
+
+		parsedValue.ReleaseBuffer();
+
+
+	#else
+
+
+		INT parsedValueLength = WideCharToMultiByte(CP_ACP, NULL, parsedValue, parsedValue.GetLength(), NULL, NULL, NULL, NULL);
+
+
+		WideCharToMultiByte(CP_ACP, NULL, parsedValue, parsedValue.GetLength(), (LPSTR)(encodedData), parsedValueLength, NULL, NULL);
+
+
+	#endif
 
 
 	if (!(CryptHashData(cryptHashHandle, encodedData, (DWORD)parsedValue.GetLength(), NULL)))
@@ -734,10 +767,22 @@ DWORD WebSocketClientHandshaking(VOID *lpVoid)
 	memset(pCurrentClientWebSocketConnection->currentClientBuffer, NULL, (size_t)1024);
 
 
-	INT webSocketClientHandshakingMessageLength = WideCharToMultiByte(CP_UTF8, NULL, webSocketClientHandshakingMessage, (INT)_tcslen(webSocketClientHandshakingMessage), NULL, NULL, NULL, NULL);
+	#ifndef _UNICODE
 
 
-	WideCharToMultiByte(CP_UTF8, NULL, webSocketClientHandshakingMessage, (INT)_tcslen(webSocketClientHandshakingMessage), pCurrentClientWebSocketConnection->currentClientBuffer, webSocketClientHandshakingMessageLength, NULL, NULL);
+		_stprintf_s(pCurrentClientWebSocketConnection->currentClientBuffer, webSocketClientHandshakingMessage);
+
+
+	#else
+
+
+		INT webSocketClientHandshakingMessageLength = WideCharToMultiByte(CP_UTF8, NULL, webSocketClientHandshakingMessage, (INT)_tcslen(webSocketClientHandshakingMessage), NULL, NULL, NULL, NULL);
+
+
+		WideCharToMultiByte(CP_UTF8, NULL, webSocketClientHandshakingMessage, (INT)_tcslen(webSocketClientHandshakingMessage), pCurrentClientWebSocketConnection->currentClientBuffer, webSocketClientHandshakingMessageLength, NULL, NULL);
+
+
+	#endif
 
 
 	if (send(pCurrentClientWebSocketConnection->currentClientSocket, pCurrentClientWebSocketConnection->currentClientBuffer, (INT)strlen(pCurrentClientWebSocketConnection->currentClientBuffer), NULL) == SOCKET_ERROR)
@@ -805,39 +850,87 @@ DWORD GetCurrentActiveUserAdapterInformation(TCHAR *pIpv4)
 
 	while (pIpAdapterAddresses != NULL)
 	{
-		if ((_tcsstr(pIpAdapterAddresses->Description, _T("Virtual")) == NULL) && (_tcsstr(pIpAdapterAddresses->Description, _T("Pseudo")) == NULL))
-		{
-			if (pIpAdapterAddresses->IfType == IF_TYPE_ETHERNET_CSMACD)
+		#ifndef _UNICODE
+
+
+			CHAR targetDescription[128];
+
+			memset(targetDescription, NULL, sizeof(targetDescription));
+
+
+			_stprintf_s(targetDescription, _T("Virtual"));
+
+
+			INT convertedTargetDescriptionLength = MultiByteToWideChar(CP_ACP, NULL, targetDescription, (INT)_tcslen(targetDescription), NULL, NULL);
+
+
+			WCHAR convertedVirtualDescription[128];
+
+			memset(convertedVirtualDescription, NULL, sizeof(convertedVirtualDescription));
+
+
+			MultiByteToWideChar(CP_ACP, NULL, targetDescription, (INT)_tcslen(targetDescription), convertedVirtualDescription, convertedTargetDescriptionLength);
+
+
+			_stprintf_s(targetDescription, _T("Pseudo"));
+
+
+			convertedTargetDescriptionLength = MultiByteToWideChar(CP_ACP, NULL, targetDescription, (INT)_tcslen(targetDescription), NULL, NULL);
+
+
+			WCHAR convertedPseudoDescription[128];
+
+			memset(convertedPseudoDescription, NULL, sizeof(convertedPseudoDescription));
+
+
+			MultiByteToWideChar(CP_ACP, NULL, targetDescription, (INT)_tcslen(targetDescription), convertedPseudoDescription, convertedTargetDescriptionLength);
+
+
+			if ((wcsstr(pIpAdapterAddresses->Description, convertedVirtualDescription) == NULL) && (wcsstr(pIpAdapterAddresses->Description, convertedPseudoDescription) == NULL))
 			{
-				CHAR currentActiveAdapterUnicastIpAddress[128];
-
-				memset(currentActiveAdapterUnicastIpAddress, NULL, sizeof(currentActiveAdapterUnicastIpAddress));
 
 
-				if (getnameinfo(pIpAdapterAddresses->FirstUnicastAddress->Address.lpSockaddr, pIpAdapterAddresses->FirstUnicastAddress->Address.iSockaddrLength, currentActiveAdapterUnicastIpAddress, sizeof(currentActiveAdapterUnicastIpAddress), NULL, NULL, NI_NUMERICHOST) != NULL)
+		#else
+
+
+			if ((_tcsstr(pIpAdapterAddresses->Description, _T("Virtual")) == NULL) && (_tcsstr(pIpAdapterAddresses->Description, _T("Pseudo")) == NULL))
+			{
+
+
+		#endif
+
+
+				if (pIpAdapterAddresses->IfType == IF_TYPE_ETHERNET_CSMACD)
 				{
-					returnCode = (DWORD)WSAGetLastError();
+					CHAR currentActiveAdapterUnicastIpAddress[128];
+
+					memset(currentActiveAdapterUnicastIpAddress, NULL, sizeof(currentActiveAdapterUnicastIpAddress));
 
 
-					ServiceLogger(_T("[ %s : %d ] getnameinfo Failed, WSAGetLastError Code = %ld"), _T(__FUNCTION__), __LINE__, returnCode);
+					if (getnameinfo(pIpAdapterAddresses->FirstUnicastAddress->Address.lpSockaddr, pIpAdapterAddresses->FirstUnicastAddress->Address.iSockaddrLength, currentActiveAdapterUnicastIpAddress, sizeof(currentActiveAdapterUnicastIpAddress), NULL, NULL, NI_NUMERICHOST) != NULL)
+					{
+						returnCode = (DWORD)WSAGetLastError();
+
+
+						ServiceLogger(_T("[ %s : %d ] getnameinfo Failed, WSAGetLastError Code = %ld"), _T(__FUNCTION__), __LINE__, returnCode);
+
+
+						break;
+					}
+
+
+					CString convertedCurrentActiveAdapterUnicastIpAddress(currentActiveAdapterUnicastIpAddress);
+
+
+					_stprintf_s(pIpv4, (size_t)(convertedCurrentActiveAdapterUnicastIpAddress.GetLength() + 1), convertedCurrentActiveAdapterUnicastIpAddress.GetBuffer());
+
+
+					convertedCurrentActiveAdapterUnicastIpAddress.ReleaseBuffer();
 
 
 					break;
 				}
-
-
-				CString convertedCurrentActiveAdapterUnicastIpAddress(currentActiveAdapterUnicastIpAddress);
-
-
-				_stprintf_s(pIpv4, (size_t)(128 - 1), convertedCurrentActiveAdapterUnicastIpAddress.GetBuffer());
-
-
-				convertedCurrentActiveAdapterUnicastIpAddress.ReleaseBuffer();
-
-
-				break;
 			}
-		}
 
 
 		pIpAdapterAddresses = pIpAdapterAddresses->Next;
@@ -864,7 +957,7 @@ DWORD CreateWebSocketServer(VOID *lpVoid)
 	memset(&wsaData, NULL, sizeof(wsaData));
 
 
-	while (TRUE)
+	while (!(closeWebSocketSessionFlag))
 	{
 		Sleep(1000);
 
@@ -884,7 +977,7 @@ DWORD CreateWebSocketServer(VOID *lpVoid)
 		}
 
 
-		webSocketServerSocket = WSASocket(PF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, NULL, WSA_FLAG_OVERLAPPED);
+		webSocketServerSocket = WSASocketW(PF_INET, SOCK_STREAM, IPPROTO::IPPROTO_TCP, NULL, NULL, WSA_FLAG_OVERLAPPED);
 
 
 		if (webSocketServerSocket == INVALID_SOCKET)
@@ -910,7 +1003,7 @@ DWORD CreateWebSocketServer(VOID *lpVoid)
 		socketAddress.sin_family = (ADDRESS_FAMILY)PF_INET;
 
 
-		CONST USHORT port = (USHORT)9090;
+		USHORT port = (USHORT)9090;
 
 
 		socketAddress.sin_port = (USHORT)htons(port);
@@ -1046,7 +1139,7 @@ DWORD CreateWebSocketServer(VOID *lpVoid)
 			ServiceLogger(_T("[ %s : %d ] CreateThread Failed, GetLastError Code = %ld"), _T(__FUNCTION__), __LINE__, returnCode);
 
 
-			vector<WEBSOCKETSESSIONMANAGER *>::iterator currentWebSocketSessionCursor = webSocketSessionManager.begin();
+			std::vector<WEBSOCKETSESSIONMANAGER *>::iterator currentWebSocketSessionCursor = webSocketSessionManager.begin();
 
 
 			for (size_t index = NULL; index < webSocketSessionManager.size(); index++, currentWebSocketSessionCursor++)
@@ -1099,7 +1192,7 @@ DWORD CreateWebSocketServer(VOID *lpVoid)
 				webSocketClientHandshakingThreadHandle = NULL;
 
 
-				vector<WEBSOCKETSESSIONMANAGER *>::iterator currentWebSocketSessionCursor = webSocketSessionManager.begin();
+				std::vector<WEBSOCKETSESSIONMANAGER *>::iterator currentWebSocketSessionCursor = webSocketSessionManager.begin();
 
 
 				for (size_t index = NULL; index < webSocketSessionManager.size(); index++, currentWebSocketSessionCursor++)
@@ -1150,7 +1243,7 @@ DWORD CreateWebSocketServer(VOID *lpVoid)
 				webSocketClientHandshakingThreadHandle = NULL;
 
 
-				vector<WEBSOCKETSESSIONMANAGER *>::iterator currentWebSocketSessionCursor = webSocketSessionManager.begin();
+				std::vector<WEBSOCKETSESSIONMANAGER *>::iterator currentWebSocketSessionCursor = webSocketSessionManager.begin();
 
 
 				for (size_t index = NULL; index < webSocketSessionManager.size(); index++, currentWebSocketSessionCursor++)
@@ -1194,7 +1287,7 @@ DWORD CreateWebSocketServer(VOID *lpVoid)
 			ServiceLogger(_T("[ %s : %d ] WaitForSingleObject Failed, GetLastError Code = %ld"), _T(__FUNCTION__), __LINE__, returnCode);
 
 
-			vector<WEBSOCKETSESSIONMANAGER *>::iterator currentWebSocketSessionCursor = webSocketSessionManager.begin();
+			std::vector<WEBSOCKETSESSIONMANAGER *>::iterator currentWebSocketSessionCursor = webSocketSessionManager.begin();
 
 
 			for (size_t index = NULL; index < webSocketSessionManager.size(); index++, currentWebSocketSessionCursor++)

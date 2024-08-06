@@ -18,7 +18,7 @@ class CCSHSensorOracleDataBase
 
 
 	public: 
-		CCSHSensorOracleDataBase(TCHAR *pCurrentOracleUserName, TCHAR *pCurrentOracleUserPassword, TCHAR *pCurrentOracleServiceName);
+		CCSHSensorOracleDataBase(TCHAR *pCurrentOracleUserName, TCHAR *pCurrentOracleUserPassword, TCHAR *pCurrentOracleUserTableName, TCHAR *pCurrentOracleServiceName);
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -63,6 +63,10 @@ class CCSHSensorOracleDataBase
 
 	public:
 		std::string currentOracleUserPassword;
+
+
+	public:
+		std::string currentOracleTableName;
 
 
 	public:
@@ -131,14 +135,28 @@ class CCSHSensorOracleDataBase
 
 
 	public:
-		VOID ConvertWideCharToMultyByteChar(CONST TCHAR *pWideCharString, CHAR *pMultyByteCharString);
+		VOID ConvertWideCharToMultyByteCharANSI(CONST TCHAR *pWideCharString, CHAR *pMultyByteCharString);
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 	public:
-		VOID ConvertMultyByteCharToWideChar(CONST CHAR *pMultyByteCharString, TCHAR *pWideCharString);
+		VOID ConvertMultyByteCharToWideCharANSI(CONST CHAR *pMultyByteCharString, TCHAR *pWideCharString);
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	public:
+		VOID ConvertWideCharToMultyByteCharUTF8(CONST TCHAR *pWideCharString, CHAR *pMultyByteCharString);
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	public:
+		VOID ConvertMultyByteCharToWideCharUTF8(CONST CHAR *pMultyByteCharString, TCHAR *pWideCharString);
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

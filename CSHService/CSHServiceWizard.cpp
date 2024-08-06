@@ -42,7 +42,7 @@ DWORD InstallService()
 		returnCode = GetLastError();
 
 
-		_tprintf(_T("\n\nGetModuleFileName Failed, GetLastError Code = %ld\n\n"), returnCode);
+		_tprintf_s(_T("\n\nGetModuleFileName Failed, GetLastError Code = %ld\n\n"), returnCode);
 
 
 		return returnCode;
@@ -57,7 +57,7 @@ DWORD InstallService()
 		returnCode = GetLastError();
 
 
-		_tprintf(_T("\n\nOpenSCManager Failed, GetLastError Code = %ld\n\n"), returnCode);
+		_tprintf_s(_T("\n\nOpenSCManager Failed, GetLastError Code = %ld\n\n"), returnCode);
 
 
 		return returnCode;
@@ -72,7 +72,7 @@ DWORD InstallService()
 		returnCode = GetLastError();
 
 
-		_tprintf(_T("\n\nCreateService Failed, GetLastError Code = %ld\n\n"), returnCode);
+		_tprintf_s(_T("\n\nCreateService Failed, GetLastError Code = %ld\n\n"), returnCode);
 
 
 		CloseServiceHandle(SCManagerHandle);
@@ -85,7 +85,7 @@ DWORD InstallService()
 	}
 
 
-	_tprintf(_T("\n\nCreateService Done, %s Has Been Installed Completely"), SERVICE_NAME);
+	_tprintf_s(_T("\n\nCreateService Done, %s Has Been Installed Completely"), SERVICE_NAME);
 
 
 	SERVICE_DESCRIPTION serviceDescription;
@@ -103,14 +103,14 @@ DWORD InstallService()
 			returnCode = ERROR_SUCCESS;
 
 
-			_tprintf(_T("\n\nStartService Done, %s Will Be Started As Soon As Possible\n\n"), SERVICE_NAME);
+			_tprintf_s(_T("\n\nStartService Done, %s Will Be Started As Soon As Possible\n\n"), SERVICE_NAME);
 		}
 		else
 		{
 			returnCode = GetLastError();
 
 
-			_tprintf(_T("\n\nStartService Failed, GetLastError Code = %ld\n\n"), returnCode);
+			_tprintf_s(_T("\n\nStartService Failed, GetLastError Code = %ld\n\n"), returnCode);
 		}
 	}
 	else
@@ -118,7 +118,7 @@ DWORD InstallService()
 		returnCode = GetLastError();
 
 
-		_tprintf(_T("\n\nChangeServiceConfig2 Failed, GetLastError Code = %ld\n\n"), returnCode);
+		_tprintf_s(_T("\n\nChangeServiceConfig2 Failed, GetLastError Code = %ld\n\n"), returnCode);
 	}
 
 
@@ -157,7 +157,7 @@ DWORD UninstallService()
 		returnCode = GetLastError();
 
 
-		_tprintf(_T("\n\nOpenSCManager Failed, GetLastError Code = %ld\n\n"), returnCode);
+		_tprintf_s(_T("\n\nOpenSCManager Failed, GetLastError Code = %ld\n\n"), returnCode);
 
 
 		return returnCode;
@@ -172,7 +172,7 @@ DWORD UninstallService()
 		returnCode = GetLastError();
 
 
-		_tprintf(_T("\n\nOpenService Failed, GetLastError Code = %ld\n\n"), returnCode);
+		_tprintf_s(_T("\n\nOpenService Failed, GetLastError Code = %ld\n\n"), returnCode);
 
 
 		CloseServiceHandle(SCManagerHandle);
@@ -199,7 +199,7 @@ DWORD UninstallService()
 
 			if (serviceStatus.dwCurrentState == SERVICE_STOP_PENDING)
 			{
-				_tprintf(_T("\n\nCurrent Status Is SERVICE_STOP_PENDING, Please Wait A Second, %s Will Be Stopped As Soon As Possible"), SERVICE_NAME);
+				_tprintf_s(_T("\n\nCurrent Status Is SERVICE_STOP_PENDING, Please Wait A Second, %s Will Be Stopped As Soon As Possible"), SERVICE_NAME);
 			}
 			else
 			{
@@ -210,7 +210,7 @@ DWORD UninstallService()
 
 		if (serviceStatus.dwCurrentState == SERVICE_STOPPED)
 		{
-			_tprintf(_T("\n\nControlService Done, %s Has Been Stopped"), SERVICE_NAME);
+			_tprintf_s(_T("\n\nControlService Done, %s Has Been Stopped"), SERVICE_NAME);
 
 
 			if (DeleteService(SCServiceHandle))
@@ -218,14 +218,14 @@ DWORD UninstallService()
 				returnCode = ERROR_SUCCESS;
 
 
-				_tprintf(_T("\n\nDeleteService Done, %s Has Been UnInstalled Completely\n\n"), SERVICE_NAME);
+				_tprintf_s(_T("\n\nDeleteService Done, %s Has Been UnInstalled Completely\n\n"), SERVICE_NAME);
 			}
 			else
 			{
 				returnCode = GetLastError();
 
 
-				_tprintf(_T("\n\nDeleteService Failed, GetLastError Code = %ld\n\n"), returnCode);
+				_tprintf_s(_T("\n\nDeleteService Failed, GetLastError Code = %ld\n\n"), returnCode);
 			}
 		}
 	}
@@ -234,7 +234,7 @@ DWORD UninstallService()
 		returnCode = GetLastError();
 
 
-		_tprintf(_T("\n\nControlService Failed, GetLastError Code = %ld\n\n"), returnCode);
+		_tprintf_s(_T("\n\nControlService Failed, GetLastError Code = %ld\n\n"), returnCode);
 	}
 
 

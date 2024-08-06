@@ -18,15 +18,15 @@ CCSHSensorCryptography::CCSHSensorCryptography()
 	memset(masterKey, NULL, sizeof(masterKey));
 
 
-	for (INT index = (INT)0; index < (INT)16; index++)
+	for (INT index = 0; index < 16; index++)
 	{
-		masterKey[index] = (BYTE)(index * (INT)0x7F);
+		masterKey[index] = (BYTE)(index * 0x7F);
 	}
 
 
-	for (INT index = (INT)16; index < (INT)32; index++)
+	for (INT index = 16; index < 32; index++)
 	{
-		masterKey[index] = (BYTE)((index - (INT)16) * (INT)0xE9);
+		masterKey[index] = (BYTE)((index - 16) * 0xE9);
 	}
 
 
@@ -90,37 +90,37 @@ CCSHSensorCryptography::CCSHSensorCryptography()
 	memset(cryptedMultyByteStringY, NULL, sizeof(cryptedMultyByteStringY));
 
 
-	ConvertWideCharToMultyByteChar(cryptedWideStringY, cryptedMultyByteStringY);
+	ConvertWideCharToMultyByteCharANSI(cryptedWideStringY, cryptedMultyByteStringY);
 
 
 	memset(cryptedMultyByteStringN, NULL, sizeof(cryptedMultyByteStringN));
 
 
-	ConvertWideCharToMultyByteChar(cryptedWideStringN, cryptedMultyByteStringN);
+	ConvertWideCharToMultyByteCharANSI(cryptedWideStringN, cryptedMultyByteStringN);
 
 
 	memset(cryptedMultyByteString0, NULL, sizeof(cryptedMultyByteString0));
 
 
-	ConvertWideCharToMultyByteChar(cryptedWideString0, cryptedMultyByteString0);
+	ConvertWideCharToMultyByteCharANSI(cryptedWideString0, cryptedMultyByteString0);
 
 
 	memset(cryptedMultyByteString1, NULL, sizeof(cryptedMultyByteString1));
 
 
-	ConvertWideCharToMultyByteChar(cryptedWideString1, cryptedMultyByteString1);
+	ConvertWideCharToMultyByteCharANSI(cryptedWideString1, cryptedMultyByteString1);
 
 
 	memset(cryptedMultyByteString2, NULL, sizeof(cryptedMultyByteString2));
 
 
-	ConvertWideCharToMultyByteChar(cryptedWideString2, cryptedMultyByteString2);
+	ConvertWideCharToMultyByteCharANSI(cryptedWideString2, cryptedMultyByteString2);
 
 
 	memset(cryptedMultyByteString3, NULL, sizeof(cryptedMultyByteString3));
 
 
-	ConvertWideCharToMultyByteChar(cryptedWideString3, cryptedMultyByteString3);
+	ConvertWideCharToMultyByteCharANSI(cryptedWideString3, cryptedMultyByteString3);
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -137,10 +137,10 @@ VOID CCSHSensorCryptography::ARIAEncrypt(TCHAR *pCurrentQueryBuffer)
 	memset(plainText, NULL, sizeof(plainText));
 
 
-	INT pCurrentQueryBufferLength = WideCharToMultiByte(CP_UTF8, NULL, pCurrentQueryBuffer, (INT)_tcslen(pCurrentQueryBuffer), NULL, NULL, NULL, NULL);
+	INT pCurrentQueryBufferLength = (INT)_tcslen(pCurrentQueryBuffer);
 
 
-	WideCharToMultiByte(CP_UTF8, NULL, pCurrentQueryBuffer, (INT)_tcslen(pCurrentQueryBuffer), (LPSTR)plainText, pCurrentQueryBufferLength, NULL, NULL);
+	ConvertWideCharToMultyByteCharUTF8(pCurrentQueryBuffer, (LPSTR)plainText);
 
 
 	memset(pCurrentQueryBuffer, NULL, _tcslen(pCurrentQueryBuffer));
@@ -149,7 +149,7 @@ VOID CCSHSensorCryptography::ARIAEncrypt(TCHAR *pCurrentQueryBuffer)
 	memset(roundKey, NULL, sizeof(roundKey));
 
 
-	EncKeySetup(masterKey, roundKey, (INT)256);
+	EncKeySetup(masterKey, roundKey, 256);
 
 
 	BYTE cryptedCode[256];
@@ -157,24 +157,27 @@ VOID CCSHSensorCryptography::ARIAEncrypt(TCHAR *pCurrentQueryBuffer)
 	memset(cryptedCode, NULL, sizeof(cryptedCode));
 
 
-	if ((INT)(pCurrentQueryBufferLength % 16) != NULL)
+	if ((pCurrentQueryBufferLength % 16) != NULL)
 	{
-		pCurrentQueryBufferLength = (INT)(((pCurrentQueryBufferLength / 16) + 1) * 16);
+		pCurrentQueryBufferLength = (((pCurrentQueryBufferLength / 16) + 1) * 16);
 	}
 
 
-	INT offset = NULL;
+	LONG offset = NULL;
 
 
-	while ((LONG)pCurrentQueryBufferLength > 0)
+	LONG currentCryptedBufferLength = (LONG)pCurrentQueryBufferLength;
+
+
+	while (currentCryptedBufferLength > (LONG)0)
 	{
-		Crypt((plainText + offset), (INT)16, roundKey, (cryptedCode + offset));
+		Crypt((plainText + offset), 16, roundKey, (cryptedCode + offset));
 
 
-		offset += (INT)16;
+		offset += (LONG)16;
 
 
-		pCurrentQueryBufferLength -= (INT)16;
+		currentCryptedBufferLength -= (LONG)16;
 	}
 
 
@@ -251,7 +254,7 @@ VOID CCSHSensorCryptography::ARIADecrypt(TCHAR *pCurrentQueryBuffer)
 	memset(roundKey, NULL, sizeof(roundKey));
 
 
-	DecKeySetup(masterKey, roundKey, (INT)256);
+	DecKeySetup(masterKey, roundKey, 256);
 
 
 	BYTE plainText[128];
@@ -259,28 +262,31 @@ VOID CCSHSensorCryptography::ARIADecrypt(TCHAR *pCurrentQueryBuffer)
 	memset(plainText, NULL, sizeof(plainText));
 
 
-	INT offset = NULL;
+	LONG offset = NULL;
 
 
-	while (((LONG)dwCryptedCode > 0))
+	LONG currentDecryptedBufferLength = (LONG)dwCryptedCode;
+
+
+	while ((currentDecryptedBufferLength > (LONG)0))
 	{
-		Crypt((cryptedCode + offset), (INT)16, roundKey, (plainText + offset));
+		Crypt((cryptedCode + offset), 16, roundKey, (plainText + offset));
 
 
-		offset += (INT)16;
+		offset += (LONG)16;
 
 
-		dwCryptedCode -= (INT)16;
+		currentDecryptedBufferLength -= (LONG)16;
 	}
 
 
 	plainText[offset] = NULL;
 
 
-	INT plainTextLength = MultiByteToWideChar(CP_UTF8, NULL, (LPCCH)plainText, (INT)strlen((LPSTR)plainText), NULL, NULL);
+	ConvertMultyByteCharToWideCharUTF8((LPSTR)plainText, pCurrentQueryBuffer);
 
 
-	MultiByteToWideChar(CP_UTF8, NULL, (LPCCH)plainText, (INT)strlen((LPSTR)plainText), pCurrentQueryBuffer, plainTextLength);
+	size_t plainTextLength = strlen((LPSTR)plainText);
 
 
 	pCurrentQueryBuffer[plainTextLength] = NULL;
@@ -342,13 +348,13 @@ VOID CCSHSensorCryptography::SHA256Encrypt(TCHAR *pCurrentQueryBuffer)
 	memset(hashedData, NULL, sizeof(hashedData));
 
 
-	INT pCurrentQueryBufferLength = WideCharToMultiByte(CP_UTF8, NULL, pCurrentQueryBuffer, (INT)_tcslen(pCurrentQueryBuffer), NULL, NULL, NULL, NULL);
+	DWORD pCurrentQueryBufferLength = (DWORD)_tcslen(pCurrentQueryBuffer);
 
 
-	WideCharToMultiByte(CP_UTF8, NULL, pCurrentQueryBuffer, (INT)_tcslen(pCurrentQueryBuffer), (LPSTR)hashedData, pCurrentQueryBufferLength, NULL, NULL);
+	ConvertWideCharToMultyByteCharUTF8(pCurrentQueryBuffer, (LPSTR)hashedData);
 
 
-	if (!(CryptHashData(cryptHashHandle, hashedData, (DWORD)pCurrentQueryBufferLength, NULL))) 
+	if (!(CryptHashData(cryptHashHandle, hashedData, pCurrentQueryBufferLength, NULL))) 
 	{
 		CString errorMessage;
 
@@ -442,30 +448,180 @@ VOID CCSHSensorCryptography::SHA256Encrypt(TCHAR *pCurrentQueryBuffer)
 }
 
 
-VOID CCSHSensorCryptography::ConvertWideCharToMultyByteChar(CONST TCHAR *pWideCharString, CHAR *pMultyByteCharString)
+VOID CCSHSensorCryptography::ConvertWideCharToMultyByteCharANSI(CONST TCHAR *pWideCharString, CHAR *pMultyByteCharString)
 {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	INT pWideCharStringLength = WideCharToMultiByte(CP_ACP, NULL, pWideCharString, (INT)_tcslen(pWideCharString), NULL, NULL, NULL, NULL);
+	#ifndef _UNICODE
 
 
-	WideCharToMultiByte(CP_ACP, NULL, pWideCharString, (INT)_tcslen(pWideCharString), pMultyByteCharString, pWideCharStringLength, NULL, NULL);
+		_stprintf_s(pMultyByteCharString, (_tcslen(pWideCharString) + (size_t)1), pWideCharString);
+
+
+	#else
+
+
+		INT pWideCharStringLength = WideCharToMultiByte(CP_ACP, NULL, pWideCharString, (INT)_tcslen(pWideCharString), NULL, NULL, NULL, NULL);
+
+
+		WideCharToMultiByte(CP_ACP, NULL, pWideCharString, (INT)_tcslen(pWideCharString), pMultyByteCharString, pWideCharStringLength, NULL, NULL);
+
+
+	#endif
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
 
-VOID CCSHSensorCryptography::ConvertMultyByteCharToWideChar(CONST CHAR *pMultyByteCharString, TCHAR *pWideCharString)
+VOID CCSHSensorCryptography::ConvertMultyByteCharToWideCharANSI(CONST CHAR *pMultyByteCharString, TCHAR *pWideCharString)
 {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	INT pMultyByteCharStringLength = MultiByteToWideChar(CP_ACP, NULL, pMultyByteCharString, (INT)strlen(pMultyByteCharString), NULL, NULL);
+	#ifndef _UNICODE
 
 
-	MultiByteToWideChar(CP_ACP, NULL, pMultyByteCharString, (INT)strlen(pMultyByteCharString), pWideCharString, pMultyByteCharStringLength);
+		_stprintf_s(pWideCharString, (_tcslen(pMultyByteCharString) + (size_t)1), pMultyByteCharString);
+
+
+	#else
+
+
+		INT pMultyByteCharStringLength = MultiByteToWideChar(CP_ACP, NULL, pMultyByteCharString, (INT)strlen(pMultyByteCharString), NULL, NULL);
+
+
+		MultiByteToWideChar(CP_ACP, NULL, pMultyByteCharString, (INT)strlen(pMultyByteCharString), pWideCharString, pMultyByteCharStringLength);
+
+
+	#endif
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+}
+
+
+VOID CCSHSensorCryptography::ConvertWideCharToMultyByteCharUTF8(CONST TCHAR *pWideCharString, CHAR *pMultyByteCharString)
+{
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	#ifndef _UNICODE
+
+
+		INT pWideCharStringLength = MultiByteToWideChar(CP_ACP, NULL, pWideCharString, (INT)_tcslen(pWideCharString), NULL, NULL);
+
+
+		WCHAR *pUTF8String = new WCHAR[pWideCharStringLength + 1];
+
+
+		if (pUTF8String == NULL)
+		{
+			CString errorMessage;
+
+
+			errorMessage.Format(_T("calloc Failed, GetLastError Code = %ld"), GetLastError());
+
+
+			MessageBox(theApp.m_pMainWnd->GetSafeHwnd(), errorMessage, _T("CSHSensor"), (MB_OK | MB_ICONERROR | MB_TOPMOST));
+
+
+			return;
+		}
+
+
+		MultiByteToWideChar(CP_ACP, NULL, pWideCharString, (INT)_tcslen(pWideCharString), pUTF8String, pWideCharStringLength);
+
+
+		pUTF8String[pWideCharStringLength] = NULL;
+
+
+		INT pUTF8StringLength = WideCharToMultiByte(CP_UTF8, NULL, pUTF8String, (INT)wcslen(pUTF8String), NULL, NULL, NULL, NULL);
+
+
+		WideCharToMultiByte(CP_UTF8, NULL, pUTF8String, (INT)wcslen(pUTF8String), pMultyByteCharString, pUTF8StringLength, NULL, NULL);
+
+
+		delete [] pUTF8String;
+
+
+		pUTF8String = NULL;
+
+
+	#else
+
+
+		INT pWideCharStringLength = WideCharToMultiByte(CP_UTF8, NULL, pWideCharString, (INT)_tcslen(pWideCharString), NULL, NULL, NULL, NULL);
+
+
+		WideCharToMultiByte(CP_UTF8, NULL, pWideCharString, (INT)_tcslen(pWideCharString), pMultyByteCharString, pWideCharStringLength, NULL, NULL);
+
+
+	#endif
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+}
+
+
+VOID CCSHSensorCryptography::ConvertMultyByteCharToWideCharUTF8(CONST CHAR *pMultyByteCharString, TCHAR *pWideCharString)
+{
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	#ifndef _UNICODE
+
+
+		INT pMultyByteCharStringLength = MultiByteToWideChar(CP_UTF8, NULL, pMultyByteCharString, (INT)_tcslen(pMultyByteCharString), NULL, NULL);
+
+
+		WCHAR *pUTF8String = new WCHAR[pMultyByteCharStringLength + 1];
+
+
+		if (pUTF8String == NULL)
+		{
+			CString errorMessage;
+
+
+			errorMessage.Format(_T("calloc Failed, GetLastError Code = %ld"), GetLastError());
+
+
+			MessageBox(theApp.m_pMainWnd->GetSafeHwnd(), errorMessage, _T("CSHSensor"), (MB_OK | MB_ICONERROR | MB_TOPMOST));
+
+
+			return;
+		}
+
+
+		MultiByteToWideChar(CP_UTF8, NULL, pMultyByteCharString, (INT)_tcslen(pMultyByteCharString), pUTF8String, pMultyByteCharStringLength);
+
+
+		pUTF8String[pMultyByteCharStringLength] = NULL;
+
+
+		INT pUTF8StringLength = WideCharToMultiByte(CP_ACP, NULL, pUTF8String, (INT)wcslen(pUTF8String), NULL, NULL, NULL, NULL);
+
+
+		WideCharToMultiByte(CP_ACP, NULL, pUTF8String, (INT)wcslen(pUTF8String), pWideCharString, pUTF8StringLength, NULL, NULL);
+
+
+		delete [] pUTF8String;
+
+
+		pUTF8String = NULL;
+
+
+	#else
+
+
+		INT pMultyByteCharStringLength = MultiByteToWideChar(CP_UTF8, NULL, pMultyByteCharString, (INT)strlen(pMultyByteCharString), NULL, NULL);
+
+
+		MultiByteToWideChar(CP_UTF8, NULL, pMultyByteCharString, (INT)strlen(pMultyByteCharString), pWideCharString, pMultyByteCharStringLength);
+
+
+	#endif
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

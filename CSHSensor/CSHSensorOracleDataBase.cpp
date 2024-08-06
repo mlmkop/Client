@@ -9,29 +9,23 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-CString oracleDataBaseUserTableName;
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 extern CCSHSensorCryptography *pCCSHSensorCryptography;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-CCSHSensorOracleDataBase::CCSHSensorOracleDataBase(TCHAR *pCurrentOracleUserName, TCHAR *pCurrentOracleUserPassword, TCHAR *pCurrentOracleServiceName) : currentOracleDataBaseConfigurationFlag(FALSE), currentOracleEnvironment(NULL), currentOracleConnection(NULL), currentOracleStatement(NULL), currentOracleResultSet(NULL)
+CCSHSensorOracleDataBase::CCSHSensorOracleDataBase(TCHAR *pCurrentOracleUserName, TCHAR *pCurrentOracleUserPassword, TCHAR *pCurrentOracleTableName, TCHAR *pCurrentOracleServiceName) : currentOracleDataBaseConfigurationFlag(FALSE), currentOracleEnvironment(NULL), currentOracleConnection(NULL), currentOracleStatement(NULL), currentOracleResultSet(NULL)
 {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	CHAR convertedCurrentOracleUserName[512];
+	CHAR convertedCurrentOracleUserName[128];
 
 	memset(convertedCurrentOracleUserName, NULL, sizeof(convertedCurrentOracleUserName));
 
 
-	ConvertWideCharToMultyByteChar(pCurrentOracleUserName, convertedCurrentOracleUserName);
+	ConvertWideCharToMultyByteCharANSI(pCurrentOracleUserName, convertedCurrentOracleUserName);
 
 
 	this->currentOracleUserName.clear();
@@ -43,12 +37,12 @@ CCSHSensorOracleDataBase::CCSHSensorOracleDataBase(TCHAR *pCurrentOracleUserName
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	CHAR convertedCurrentOraclePassword[512];
+	CHAR convertedCurrentOraclePassword[128];
 
 	memset(convertedCurrentOraclePassword, NULL, sizeof(convertedCurrentOraclePassword));
 
 
-	ConvertWideCharToMultyByteChar(pCurrentOracleUserPassword, convertedCurrentOraclePassword);
+	ConvertWideCharToMultyByteCharANSI(pCurrentOracleUserPassword, convertedCurrentOraclePassword);
 
 
 	this->currentOracleUserPassword.clear();
@@ -60,12 +54,29 @@ CCSHSensorOracleDataBase::CCSHSensorOracleDataBase(TCHAR *pCurrentOracleUserName
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	CHAR convertedCurrentOracleServiceName[512];
+	CHAR convertedCurrentOracleTableName[128];
+
+	memset(convertedCurrentOracleTableName, NULL, sizeof(convertedCurrentOracleTableName));
+
+
+	ConvertWideCharToMultyByteCharANSI(pCurrentOracleTableName, convertedCurrentOracleTableName);
+
+
+	this->currentOracleTableName.clear();
+
+
+	this->currentOracleTableName.assign(convertedCurrentOracleTableName);
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	CHAR convertedCurrentOracleServiceName[128];
 
 	memset(convertedCurrentOracleServiceName, NULL, sizeof(convertedCurrentOracleServiceName));
 
 
-	ConvertWideCharToMultyByteChar(pCurrentOracleServiceName, convertedCurrentOracleServiceName);
+	ConvertWideCharToMultyByteCharANSI(pCurrentOracleServiceName, convertedCurrentOracleServiceName);
 
 
 	this->currentOracleServiceName.clear();
@@ -116,7 +127,7 @@ VOID CCSHSensorOracleDataBase::CreateOracleInstanceEnvironment()
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	while (!(currentOracleDataBaseConfigurationFlag))
+	while (TRUE)
 	{
 		Sleep(1000);
 
@@ -128,7 +139,7 @@ VOID CCSHSensorOracleDataBase::CreateOracleInstanceEnvironment()
 
 			if (currentOracleEnvironment != NULL)
 			{
-				currentOracleDataBaseConfigurationFlag = TRUE;
+				break;
 			}
 		}
 		catch (oracle::occi::SQLException currentSQLException)
@@ -153,9 +164,6 @@ VOID CCSHSensorOracleDataBase::DeleteOracleInstanceEnvironment()
 
 
 		currentOracleEnvironment = NULL;
-
-
-		currentOracleDataBaseConfigurationFlag = FALSE;
 	}
 
 
@@ -227,10 +235,7 @@ VOID CCSHSensorOracleDataBase::CreateOracleInstanceStatement(TCHAR *pCurrentSQLT
 		memset(convertedCurrentSQLTransactionStatement, NULL, sizeof(convertedCurrentSQLTransactionStatement));
 
 
-		INT currentSQLTransactionStatementLength = WideCharToMultiByte(CP_ACP, NULL, pCurrentSQLTransactionStatement, (INT)_tcslen(pCurrentSQLTransactionStatement), NULL, NULL, NULL, NULL);
-
-
-		WideCharToMultiByte(CP_ACP, NULL, pCurrentSQLTransactionStatement, (INT)_tcslen(pCurrentSQLTransactionStatement), convertedCurrentSQLTransactionStatement, currentSQLTransactionStatementLength, NULL, NULL);
+		ConvertWideCharToMultyByteCharANSI(pCurrentSQLTransactionStatement, convertedCurrentSQLTransactionStatement);
 
 
 		currentOracleSQLTransactionStatement.assign(convertedCurrentSQLTransactionStatement);
@@ -359,7 +364,7 @@ BOOL CCSHSensorOracleDataBase::excuteOracleInstanceStatement(TCHAR *pCurrentActi
 									memset(convertedCurrentOracleResultSetFourthQueryBuffer, NULL, sizeof(convertedCurrentOracleResultSetFourthQueryBuffer));
 
 
-									ConvertMultyByteCharToWideChar(currentOracleResultSetFourthQueryBuffer.c_str(), convertedCurrentOracleResultSetFourthQueryBuffer);
+									ConvertMultyByteCharToWideCharUTF8(currentOracleResultSetFourthQueryBuffer.c_str(), convertedCurrentOracleResultSetFourthQueryBuffer);
 
 
 									pCCSHSensorCryptography->ARIADecrypt(convertedCurrentOracleResultSetFourthQueryBuffer);
@@ -453,7 +458,7 @@ BOOL CCSHSensorOracleDataBase::excuteOracleInstanceStatement(TCHAR *pCurrentActi
 								memset(convertedCurrentActiveUserPassword, NULL, sizeof(convertedCurrentActiveUserPassword));
 
 
-								ConvertWideCharToMultyByteChar(pCurrentActiveUserPassword, convertedCurrentActiveUserPassword);
+								ConvertWideCharToMultyByteCharUTF8(pCurrentActiveUserPassword, convertedCurrentActiveUserPassword);
 
 
 								if (currentOracleResultSetSixthQueryBuffer.compare(convertedCurrentActiveUserPassword) != NULL)
@@ -490,13 +495,18 @@ BOOL CCSHSensorOracleDataBase::excuteOracleInstanceStatement(TCHAR *pCurrentActi
 									MessageBox(theApp.m_pMainWnd->GetSafeHwnd(), errorMessage, _T("CSHSensor"), (MB_OK | MB_ICONWARNING | MB_TOPMOST));
 
 
+									TCHAR convertedCurrentOracleTableName[128];
+
+									memset(convertedCurrentOracleTableName, NULL, sizeof(convertedCurrentOracleTableName));
+
+
+									ConvertMultyByteCharToWideCharANSI(currentOracleTableName.c_str(), convertedCurrentOracleTableName);
+
+
 									CString signInCountSQLTransactionStatementBuillder;
 
 
-									signInCountSQLTransactionStatementBuillder.Format(_T("UPDATE %s SET USER_SIGNINCOUNT='%s' WHERE USER_ID='%s'"), oracleDataBaseUserTableName.GetBuffer(), currentOracleResultSetFifthQueryBufferString.GetBuffer(), pCurrentActiveUserID);
-
-
-									oracleDataBaseUserTableName.ReleaseBuffer();
+									signInCountSQLTransactionStatementBuillder.Format(_T("UPDATE %s SET USER_SIGNINCOUNT='%s' WHERE USER_ID='%s'"), convertedCurrentOracleTableName, currentOracleResultSetFifthQueryBufferString.GetBuffer(), pCurrentActiveUserID);
 
 
 									currentOracleResultSetFifthQueryBufferString.ReleaseBuffer();
@@ -643,30 +653,180 @@ VOID CCSHSensorOracleDataBase::DeleteOracleInstanceResultSet()
 }
 
 
-VOID CCSHSensorOracleDataBase::ConvertWideCharToMultyByteChar(CONST TCHAR *pWideCharString, CHAR *pMultyByteCharString)
+VOID CCSHSensorOracleDataBase::ConvertWideCharToMultyByteCharANSI(CONST TCHAR *pWideCharString, CHAR *pMultyByteCharString)
 {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	INT pWideCharStringLength = WideCharToMultiByte(CP_ACP, NULL, pWideCharString, (INT)_tcslen(pWideCharString), NULL, NULL, NULL, NULL);
+	#ifndef _UNICODE
 
 
-	WideCharToMultiByte(CP_ACP, NULL, pWideCharString, (INT)_tcslen(pWideCharString), pMultyByteCharString, pWideCharStringLength, NULL, NULL);
+		_stprintf_s(pMultyByteCharString, (_tcslen(pWideCharString) + (size_t)1), pWideCharString);
+
+
+	#else
+
+
+		INT pWideCharStringLength = WideCharToMultiByte(CP_ACP, NULL, pWideCharString, (INT)_tcslen(pWideCharString), NULL, NULL, NULL, NULL);
+
+
+		WideCharToMultiByte(CP_ACP, NULL, pWideCharString, (INT)_tcslen(pWideCharString), pMultyByteCharString, pWideCharStringLength, NULL, NULL);
+
+
+	#endif
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
 
-VOID CCSHSensorOracleDataBase::ConvertMultyByteCharToWideChar(CONST CHAR *pMultyByteCharString, TCHAR *pWideCharString)
+VOID CCSHSensorOracleDataBase::ConvertMultyByteCharToWideCharANSI(CONST CHAR *pMultyByteCharString, TCHAR *pWideCharString)
 {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	INT pMultyByteCharStringLength = MultiByteToWideChar(CP_ACP, NULL, pMultyByteCharString, (INT)strlen(pMultyByteCharString), NULL, NULL);
+	#ifndef _UNICODE
 
 
-	MultiByteToWideChar(CP_ACP, NULL, pMultyByteCharString, (INT)strlen(pMultyByteCharString), pWideCharString, pMultyByteCharStringLength);
+		_stprintf_s(pWideCharString, (_tcslen(pMultyByteCharString) + (size_t)1), pMultyByteCharString);
+
+
+	#else
+
+
+		INT pMultyByteCharStringLength = MultiByteToWideChar(CP_ACP, NULL, pMultyByteCharString, (INT)strlen(pMultyByteCharString), NULL, NULL);
+
+
+		MultiByteToWideChar(CP_ACP, NULL, pMultyByteCharString, (INT)strlen(pMultyByteCharString), pWideCharString, pMultyByteCharStringLength);
+
+
+	#endif
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+}
+
+
+VOID CCSHSensorOracleDataBase::ConvertWideCharToMultyByteCharUTF8(CONST TCHAR *pWideCharString, CHAR *pMultyByteCharString)
+{
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	#ifndef _UNICODE
+
+
+		INT pWideCharStringLength = MultiByteToWideChar(CP_ACP, NULL, pWideCharString, (INT)_tcslen(pWideCharString), NULL, NULL);
+
+
+		WCHAR *pUTF8String = new WCHAR[pWideCharStringLength + 1];
+
+
+		if (pUTF8String == NULL)
+		{
+			CString errorMessage;
+
+
+			errorMessage.Format(_T("calloc Failed, GetLastError Code = %ld"), GetLastError());
+
+
+			MessageBox(theApp.m_pMainWnd->GetSafeHwnd(), errorMessage, _T("CSHSensor"), (MB_OK | MB_ICONERROR | MB_TOPMOST));
+
+
+			return;
+		}
+
+
+		MultiByteToWideChar(CP_ACP, NULL, pWideCharString, (INT)_tcslen(pWideCharString), pUTF8String, pWideCharStringLength);
+
+
+		pUTF8String[pWideCharStringLength] = NULL;
+
+
+		INT pUTF8StringLength = WideCharToMultiByte(CP_UTF8, NULL, pUTF8String, (INT)wcslen(pUTF8String), NULL, NULL, NULL, NULL);
+
+
+		WideCharToMultiByte(CP_UTF8, NULL, pUTF8String, (INT)wcslen(pUTF8String), pMultyByteCharString, pUTF8StringLength, NULL, NULL);
+
+
+		delete [] pUTF8String;
+
+
+		pUTF8String = NULL;
+
+
+	#else
+
+
+		INT pWideCharStringLength = WideCharToMultiByte(CP_UTF8, NULL, pWideCharString, (INT)_tcslen(pWideCharString), NULL, NULL, NULL, NULL);
+
+
+		WideCharToMultiByte(CP_UTF8, NULL, pWideCharString, (INT)_tcslen(pWideCharString), pMultyByteCharString, pWideCharStringLength, NULL, NULL);
+
+
+	#endif
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+}
+
+
+VOID CCSHSensorOracleDataBase::ConvertMultyByteCharToWideCharUTF8(CONST CHAR *pMultyByteCharString, TCHAR *pWideCharString)
+{
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	#ifndef _UNICODE
+
+
+		INT pMultyByteCharStringLength = MultiByteToWideChar(CP_UTF8, NULL, pMultyByteCharString, (INT)_tcslen(pMultyByteCharString), NULL, NULL);
+
+
+		WCHAR *pUTF8String = new WCHAR[pMultyByteCharStringLength + 1];
+
+
+		if (pUTF8String == NULL)
+		{
+			CString errorMessage;
+
+
+			errorMessage.Format(_T("calloc Failed, GetLastError Code = %ld"), GetLastError());
+
+
+			MessageBox(theApp.m_pMainWnd->GetSafeHwnd(), errorMessage, _T("CSHSensor"), (MB_OK | MB_ICONERROR | MB_TOPMOST));
+
+
+			return;
+		}
+
+
+		MultiByteToWideChar(CP_UTF8, NULL, pMultyByteCharString, (INT)_tcslen(pMultyByteCharString), pUTF8String, pMultyByteCharStringLength);
+
+
+		pUTF8String[pMultyByteCharStringLength] = NULL;
+
+
+		INT pUTF8StringLength = WideCharToMultiByte(CP_ACP, NULL, pUTF8String, (INT)wcslen(pUTF8String), NULL, NULL, NULL, NULL);
+
+
+		WideCharToMultiByte(CP_ACP, NULL, pUTF8String, (INT)wcslen(pUTF8String), pWideCharString, pUTF8StringLength, NULL, NULL);
+
+
+		delete [] pUTF8String;
+
+
+		pUTF8String = NULL;
+
+
+	#else
+
+
+		INT pMultyByteCharStringLength = MultiByteToWideChar(CP_UTF8, NULL, pMultyByteCharString, (INT)strlen(pMultyByteCharString), NULL, NULL);
+
+
+		MultiByteToWideChar(CP_UTF8, NULL, pMultyByteCharString, (INT)strlen(pMultyByteCharString), pWideCharString, pMultyByteCharStringLength);
+
+
+	#endif
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
